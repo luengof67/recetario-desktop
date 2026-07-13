@@ -151,9 +151,18 @@ h2.hh-tras::after{display:none;}
   body #capaImpresion{display:block !important;position:static !important;inset:auto !important;
     background:#fff;padding:0;overflow:visible !important;height:auto !important;}
   .barra-impresion{display:none !important;}
-  .hoja{box-shadow:none;max-width:none;margin:0;padding:30px 40px;min-height:0;overflow:visible !important;}
+  .hoja{box-shadow:none;max-width:none;margin:0;padding:22px 40px;min-height:0 !important;height:auto !important;overflow:visible !important;}
+  .hoja-hotel{font-size:97%;}
+  .hoja-hotel .hh-seccion{margin:18px auto 10px !important;}
+  .hoja-hotel .ph{padding:4px 0 !important;}
+  .hoja-hotel .hh-nota{margin-top:18px !important;}
+  .hoja-hotel .hh-precios{margin-top:14px !important;}
+  .hoja-hotel .leyenda-hotel{margin-top:20px !important;gap:8px 14px !important;}
+  .hoja-hotel .hh-pie{margin-top:16px !important;}
   .hoja-salto{page-break-before:always !important;break-before:page !important;}
-  @page{margin:12mm;}
+  .ph, .pt, .hh-nota, .hh-precios, .leyenda-hotel, .hh-pie{page-break-inside:avoid;break-inside:avoid;}
+  .hoja > *:last-child{page-break-after:auto;}
+  @page{margin:11mm;}
 }
 @media (prefers-reduced-motion: reduce){.tarjeta{transition:none;}}
 @media (max-width:640px){.hoja{padding:30px 22px;}}
