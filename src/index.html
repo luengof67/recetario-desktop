@@ -165,7 +165,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v11<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v13<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -650,7 +650,10 @@ function abrirFormulario(id){
         </div>
         <div>
           <label class="campo-lbl" for="fNombreEn">Nombre en inglés <span style="font-weight:400;color:var(--suave);">(opcional, para el menú bilingüe)</span></label>
-          <input class="campo" id="fNombreEn" value="${esc(p?.nombreEn || "")}" placeholder="Ej.: Hake in green sauce">
+          <div style="display:flex;gap:8px;">
+            <input class="campo" id="fNombreEn" value="${esc(p?.nombreEn || "")}" placeholder="Ej.: Hake in green sauce">
+            ${GEMINI_API_KEY ? `<button class="btn-linea" id="fTraducir" style="white-space:nowrap;">🌐 Traducir</button>` : ""}
+          </div>
         </div>
         <div>
           <label class="campo-lbl" for="fSub">Sección *</label>
@@ -760,6 +763,15 @@ function abrirFormulario(id){
   };
   $("fFile").onchange = manejarFotoElegida;
   $("fFileCam").onchange = manejarFotoElegida;
+  if ($("fTraducir")) $("fTraducir").onclick = async () => {
+    const nom = $("fNombre").value.trim();
+    if (!nom){ mostrarError("Escribe primero el nombre en español."); return; }
+    const b = $("fTraducir"); const txt = b.textContent;
+    b.disabled = true; b.textContent = "…";
+    try { const [en] = await traducirPlatos([nom]); if (en) $("fNombreEn").value = en; }
+    catch(e){ mostrarError("No se pudo traducir: " + (e.message || "error")); }
+    finally { b.disabled = false; b.textContent = txt; }
+  };
   $("fCancelar").onclick = cerrarModal;
 
   function mostrarError(msg){
@@ -832,6 +844,7 @@ function abrirListaMenus(){
         <button class="btn-verde" id="btnNuevoMenu">+ Nuevo menú</button>
       </div>
       <button class="btn-linea" id="btnCuadro" style="margin-top:12px;width:100%;">📋 Cuadro oficial de alérgenos (imprimible)</button>
+      ${GEMINI_API_KEY ? `<button class="btn-linea" id="btnTraducirTodo" style="margin-top:8px;width:100%;">🌐 Traducir al inglés los platos que falten</button>` : ""}
       <div style="margin-top:10px;">${filas}</div>
       <div style="display:flex;justify-content:flex-end;margin-top:16px;">
         <button class="btn-linea" id="btnCerrarMenus">Cerrar</button>
@@ -842,6 +855,27 @@ function abrirListaMenus(){
   document.getElementById("btnCerrarMenus").onclick = cerrarModal;
   document.getElementById("btnNuevoMenu").onclick = () => abrirEditorMenu(null);
   document.getElementById("btnCuadro").onclick = abrirCuadro;
+  const btnTT = document.getElementById("btnTraducirTodo");
+  if (btnTT) btnTT.onclick = async () => {
+    const faltan = platos.filter(p => !p.nombreEn || !p.nombreEn.trim());
+    if (faltan.length === 0){ notificar("Todos los platos ya tienen traducción."); return; }
+    if (!confirm(`Se traducirán ${faltan.length} plato(s) al inglés con la IA. ¿Continuar?`)) return;
+    btnTT.disabled = true; const txt = btnTT.textContent; btnTT.textContent = "Traduciendo…";
+    try {
+      /* en lotes de 20 para no saturar */
+      for (let i = 0; i < faltan.length; i += 20){
+        const lote = faltan.slice(i, i + 20);
+        const traducciones = await traducirPlatos(lote.map(p => p.nombre));
+        lote.forEach((p, j) => { if (traducciones[j]) p.nombreEn = traducciones[j]; });
+      }
+      await guardarPlatosStore();
+      notificar("Traducción completada");
+      abrirListaMenus();
+    } catch(e){
+      notificar("No se pudo traducir: " + (e.message || "error"));
+      btnTT.disabled = false; btnTT.textContent = txt;
+    }
+  };
   capa.querySelectorAll("[data-ver]").forEach(b => b.onclick = () => { cerrarModal(); previsualizarMenu(b.dataset.ver); });
   capa.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => abrirEditorMenu(b.dataset.edit));
   capa.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
@@ -889,15 +923,15 @@ async function abrirEditorMenu(id){
             <input class="campo" id="mSubtitulo" value="${esc(m?.subtitulo || "")}" placeholder="Nombre del restaurante">
           </div>
           <div>
-            <label class="campo-lbl" for="mPrecio">Precio (línea 1)</label>
-            <input class="campo" id="mPrecio" value="${esc(m?.precio || "")}" placeholder="Ej.: Precio en Cafetería: 16,00 € (IVA incluido)">
+            <label class="campo-lbl" for="mPrecio">Precio en Cafetería (solo el importe)</label>
+            <input class="campo" id="mPrecio" value="${esc(m?.precio || "")}" placeholder="Ej.: 16,00 €" inputmode="decimal">
           </div>
         </div>
         <div id="zonaHotel" style="display:none;border:1px dashed var(--linea);border-radius:12px;padding:12px;">
           <div style="display:grid;gap:12px;">
             <div>
-              <label class="campo-lbl" for="mPrecio2">Precio (línea 2, opcional)</label>
-              <input class="campo" id="mPrecio2" value="${esc(m?.precio2 || "")}" placeholder="Ej.: Precio en Restaurante: 20,00 € (IVA incluido)">
+              <label class="campo-lbl" for="mPrecio2">Precio en Restaurante (solo el importe, opcional)</label>
+              <input class="campo" id="mPrecio2" value="${esc(m?.precio2 || "")}" placeholder="Ej.: 20,00 €" inputmode="decimal">
             </div>
             <div>
               <label class="campo-lbl" for="mNotaCentral">Nota central (español · inglés)</label>
@@ -972,9 +1006,9 @@ async function abrirEditorMenu(id){
       if ($("mTitulo").value === "Menú del día") $("mTitulo").value = "Menú Diario · Daily Menu";
       if ($("mPie").value === PIE_CLASICO) $("mPie").value = PIE_HOTEL;
       if (apartados.length === 3 && apartados[0].titulo === "Primeros" && apartados.every(a => a.platoIds.length === 0)){
-        apartados[0].titulo = "Primer Plato · First Course";
-        apartados[1].titulo = "Segundo Plato · Second Course";
-        apartados[2].titulo = "Postre · Dessert";
+        apartados[0].titulo = "Primer Plato · First Course"; apartados[0].filtroSub = "primeros";
+        apartados[1].titulo = "Segundo Plato · Second Course"; apartados[1].filtroSub = "segundos";
+        apartados[2].titulo = "Postre · Dessert"; apartados[2].filtroSub = "postres_menu";
         pintarApartados();
       }
     } else {
@@ -984,11 +1018,39 @@ async function abrirEditorMenu(id){
   }
   $("mPlantilla").onchange = actualizarPlantilla;
 
+  /* Deduce la sección principal por el título del apartado, para filtrar los platos que se ofrecen */
+  function seccionPorTitulo(titulo){
+    const t = (titulo || "").toLowerCase();
+    if (t.includes("primer")) return "menu";
+    if (t.includes("segundo")) return "menu";
+    if (t.includes("postre")) return "menu";
+    if (t.includes("entrante")) return "carta";
+    if (t.includes("tapa")) return "tapas";
+    return "todas";
+  }
+  /* Deduce la subsección concreta por el título */
+  function subseccionPorTitulo(titulo){
+    const t = (titulo || "").toLowerCase();
+    if (t.includes("primer")) return "primeros";
+    if (t.includes("segundo")) return "segundos";
+    if (t.includes("postre")) return "postres_menu";
+    return "todas";
+  }
+  apartados.forEach(a => { if (a.filtroSub === undefined) a.filtroSub = subseccionPorTitulo(a.titulo); });
+
   function pintarApartados(){
     $("mApartados").innerHTML = apartados.map((a, i) => {
       const seleccionados = a.platoIds.map(pid => platos.find(p => p.id === pid)).filter(Boolean);
+      const filtro = a.filtroSub ?? "todas";
+      /* opciones del desplegable de filtro */
+      const optsFiltro = `<option value="todas"${filtro === "todas" ? " selected" : ""}>Todas las secciones</option>` +
+        SECCIONES.map(s => `<optgroup label="${esc(s.nombre)}">` +
+          s.sub.map(sub => `<option value="${sub.id}"${filtro === sub.id ? " selected" : ""}>${esc(sub.nombre)}</option>`).join("") +
+          `</optgroup>`).join("");
+      /* lista de platos filtrada */
       const grupos = SECCIONES.map(s => {
         const opciones = s.sub.map(sub => {
+          if (filtro !== "todas" && filtro !== sub.id) return "";
           const dePlatos = platos.filter(p => p.subseccion === sub.id);
           if (dePlatos.length === 0) return "";
           return `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--suave);margin:8px 0 2px;">${esc(s.nombre)} · ${esc(sub.nombre)}</div>` +
@@ -1000,6 +1062,7 @@ async function abrirEditorMenu(id){
         }).join("");
         return opciones;
       }).join("");
+      const vacio = grupos.trim() === "";
       return `<div class="apartado-menu">
         <div style="display:flex;gap:8px;align-items:center;">
           <input class="campo" data-titulo-ap="${i}" value="${esc(a.titulo)}" placeholder="Título del apartado" style="flex:1;">
@@ -1007,13 +1070,26 @@ async function abrirEditorMenu(id){
         </div>
         <details class="selector-platos" style="margin-top:8px;">
           <summary>${seleccionados.length === 0 ? "Elegir platos…" : seleccionados.length + " plato(s): " + esc(seleccionados.map(p => p.nombre).join(", "))}</summary>
-          <div class="cuerpo">${grupos || '<div style="font-size:13px;color:var(--suave);padding:8px 0;">No hay platos en el recetario.</div>'}</div>
+          <div class="cuerpo">
+            <div style="margin:4px 0 8px;">
+              <select class="campo" data-filtro-ap="${i}" style="font-size:13px;padding:6px 10px;">${optsFiltro}</select>
+            </div>
+            ${vacio ? '<div style="font-size:13px;color:var(--suave);padding:8px 0;">No hay platos en esta sección. Cambia el filtro a «Todas las secciones» para ver el resto.</div>' : grupos}
+          </div>
         </details>
       </div>`;
     }).join("");
 
     $("mApartados").querySelectorAll("[data-titulo-ap]").forEach(inp =>
       inp.oninput = () => { apartados[Number(inp.dataset.tituloAp)].titulo = inp.value; });
+    $("mApartados").querySelectorAll("[data-filtro-ap]").forEach(sel =>
+      sel.onchange = () => {
+        const i = Number(sel.dataset.filtroAp);
+        apartados[i].filtroSub = sel.value;
+        pintarApartados();
+        const nuevoDet = $("mApartados").querySelectorAll("details")[i];
+        if (nuevoDet) nuevoDet.open = true;
+      });
     $("mApartados").querySelectorAll("[data-borrar-ap]").forEach(b =>
       b.onclick = () => { apartados.splice(Number(b.dataset.borrarAp), 1); pintarApartados(); });
     $("mApartados").querySelectorAll("input[type=checkbox]").forEach(ch =>
@@ -1031,7 +1107,7 @@ async function abrirEditorMenu(id){
       });
   }
 
-  $("mAddApartado").onclick = () => { apartados.push({ titulo: "", platoIds: [] }); pintarApartados(); };
+  $("mAddApartado").onclick = () => { apartados.push({ titulo: "", platoIds: [], filtroSub: "todas" }); pintarApartados(); };
   $("mCancelar").onclick = () => abrirListaMenus();
 
   $("mGuardar").onclick = async () => {
@@ -1158,8 +1234,8 @@ async function previsualizarMenu(id){
       ${bloques}
       ${nota}
       <div class="hh-precios">
-        ${m.precio ? `<div>${esc(m.precio)}</div>` : ""}
-        ${m.precio2 ? `<div>${esc(m.precio2)}</div>` : ""}
+        ${m.precio ? `<div>Precio en Cafetería · Price in Cafetería: ${esc(m.precio)} (IVA incluido · VAT Inc.)</div>` : ""}
+        ${m.precio2 ? `<div>Precio en Restaurante · Price in Restaurant: ${esc(m.precio2)} (IVA incluido · VAT Inc.)</div>` : ""}
       </div>
       ${leyendaHotel()}
       ${pie}
@@ -1369,6 +1445,37 @@ async function llamarGemini(base64, prompt, mime){
       ultimoError = e.message || "error de red";
       break;
     }
+  }
+  throw new Error(ultimoError);
+}
+
+/* Traduce una lista de nombres de plato al inglés con Gemini. Devuelve array paralelo. */
+async function traducirPlatos(nombres){
+  if (!GEMINI_API_KEY) throw new Error("sin clave de traducción");
+  const prompt = `Traduce al inglés estos nombres de platos de restaurante español. Devuelve SOLO un array JSON de cadenas, en el mismo orden, sin texto adicional ni marcas de código. Traducción breve y natural de carta.
+Platos: ${JSON.stringify(nombres)}`;
+  const modelos = [...new Set([GEMINI_MODELO, ...GEMINI_RESPALDO])];
+  let ultimoError = "sin conexión";
+  for (const modelo of modelos){
+    try {
+      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      });
+      if (resp.ok){
+        const data = await resp.json();
+        let texto = (data?.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("");
+        texto = texto.replace(/```json|```/g, "").trim();
+        const ini = texto.indexOf("["), fin = texto.lastIndexOf("]");
+        if (ini === -1 || fin === -1) throw new Error("respuesta sin JSON");
+        return JSON.parse(texto.slice(ini, fin + 1)).map(s => String(s).trim());
+      }
+      const err = await resp.json().catch(() => ({}));
+      ultimoError = err?.error?.message || ("HTTP " + resp.status);
+      const msg = ultimoError.toLowerCase();
+      if (!(resp.status === 404 || msg.includes("no longer available") || msg.includes("not found") || msg.includes("deprecated"))) break;
+    } catch(e){ ultimoError = e.message || "error de red"; break; }
   }
   throw new Error(ultimoError);
 }
