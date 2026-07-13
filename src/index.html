@@ -1,0 +1,1745 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recetario de cocina · Platos, alérgenos y menús</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap');
+:root{
+  --papel:#F5F6F2; --tinta:#20291F; --verde:#2F5233; --verde-osc:#243F28;
+  --azafran:#DDA321; --linea:#D8DCD2; --carta:#FFFFFF; --suave:#66705F;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:'Inter',system-ui,sans-serif;background:var(--papel);color:var(--tinta);min-height:100vh;}
+.display{font-family:'Fraunces',Georgia,serif;}
+header{background:var(--verde);color:#fff;padding:26px 20px 20px;}
+.cabecera-int{max-width:1080px;margin:0 auto;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;}
+main{max-width:1080px;margin:0 auto;padding:18px 20px 60px;}
+.chip-al{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;
+  padding:3px 10px;border-radius:999px;background:#FBF3DD;border:1px solid #E8D9A8;color:#6B5310;}
+.chip-al.ok{background:#E9F2E7;border-color:#C4DCC0;color:#2F5233;}
+.chip-ing{display:inline-flex;align-items:center;font-size:13px;padding:3px 10px;border-radius:6px;
+  background:#EDF0E8;border:1px solid var(--linea);color:var(--tinta);}
+.chip-ing button{border:none;background:transparent;cursor:pointer;margin-left:6px;color:var(--suave);font-size:13px;padding:0;}
+.tarjeta{background:var(--carta);border:1px solid var(--linea);border-radius:14px;overflow:hidden;
+  transition:transform .15s ease, box-shadow .15s ease;cursor:pointer;}
+.tarjeta:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(32,41,31,.10);}
+.btn-verde{background:var(--verde);color:#fff;border:none;border-radius:10px;padding:10px 18px;
+  font-weight:600;font-size:14px;cursor:pointer;font-family:inherit;}
+.btn-verde:hover{background:var(--verde-osc);}
+.btn-linea{background:transparent;color:var(--verde);border:1.5px solid var(--verde);border-radius:10px;
+  padding:9px 16px;font-weight:600;font-size:14px;cursor:pointer;font-family:inherit;}
+.btn-linea:hover{background:#EDF0E8;}
+.btn-linea.peligro{border-color:#B4483C;color:#B4483C;}
+.btn-blanco{background:transparent;color:#fff;border:1.5px solid #fff;border-radius:10px;
+  padding:9px 16px;font-weight:600;font-size:14px;cursor:pointer;font-family:inherit;}
+input.campo, textarea.campo, select.campo{width:100%;border:1.5px solid var(--linea);border-radius:10px;
+  padding:10px 12px;font-size:14px;background:#fff;color:var(--tinta);outline:none;font-family:inherit;}
+input.campo:focus, textarea.campo:focus, select.campo:focus{border-color:var(--verde);}
+.tab-sec{border:none;background:transparent;padding:10px 14px;border-radius:10px;font-weight:600;
+  font-size:14px;cursor:pointer;color:var(--suave);white-space:nowrap;font-family:inherit;}
+.tab-sec.activa{background:var(--verde);color:#fff;}
+.tab-sub{border:1px solid var(--linea);background:#fff;padding:6px 14px;border-radius:999px;
+  font-size:13px;font-weight:500;cursor:pointer;color:var(--tinta);white-space:nowrap;font-family:inherit;}
+.tab-sub.activa{background:var(--tinta);color:#fff;border-color:var(--tinta);}
+.fila-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;}
+.fila-subs{display:flex;gap:8px;overflow-x:auto;padding:8px 0 4px;}
+.fila-filtros{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 6px;}
+.rejilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-top:10px;}
+.vacio{padding:60px 20px;text-align:center;color:var(--suave);}
+.velo{position:fixed;inset:0;background:rgba(32,41,31,.55);z-index:50;display:flex;
+  align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;}
+.modal{background:#fff;border-radius:16px;max-width:560px;width:100%;margin:20px 0;overflow:hidden;}
+.modal.ancho{max-width:640px;}
+.etiqueta-sec{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--suave);font-weight:600;}
+.titulo-bloque{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--verde);margin-bottom:8px;}
+.grupo-chips{display:flex;flex-wrap:wrap;gap:6px;}
+label.campo-lbl{font-size:13px;font-weight:600;display:block;margin-bottom:5px;}
+.btn-alergeno{border:1px solid var(--linea);background:#fff;color:var(--tinta);border-radius:999px;
+  padding:5px 12px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
+.btn-alergeno.activo{border:1.5px solid var(--azafran);background:#FBF3DD;color:#6B5310;}
+.caja-sugerencia{background:#FBF3DD;border:1px solid #E8D9A8;border-radius:10px;padding:8px 12px;font-size:13px;margin-bottom:8px;}
+.caja-sugerencia button{border:1px solid #D9BE6B;background:#fff;border-radius:999px;padding:2px 10px;
+  margin:2px 3px;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;}
+#aviso{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--tinta);color:#fff;
+  padding:10px 20px;border-radius:999px;font-size:14px;z-index:60;display:none;}
+details.selector-platos{border:1px solid var(--linea);border-radius:10px;background:#fff;}
+details.selector-platos summary{cursor:pointer;padding:9px 12px;font-size:14px;font-weight:600;color:var(--verde);}
+details.selector-platos .cuerpo{padding:4px 12px 12px;max-height:260px;overflow-y:auto;}
+.fila-check{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:14px;}
+.fila-check input{width:16px;height:16px;accent-color:var(--verde);}
+.apartado-menu{border:1px solid var(--linea);border-radius:12px;padding:12px;background:#FAFBF8;}
+.fila-menu-guardado{display:flex;align-items:center;gap:10px;padding:12px 4px;border-bottom:1px solid var(--linea);}
+
+/* ── Hoja imprimible ── */
+#capaImpresion{display:none;}
+body.previsualizando{overflow:hidden;}
+body.previsualizando #capaImpresion{display:block;position:fixed;inset:0;background:#5b6157;z-index:80;overflow-y:auto;padding:20px;}
+.barra-impresion{max-width:760px;margin:0 auto 14px;display:flex;gap:10px;justify-content:flex-end;}
+.hoja{max-width:760px;margin:0 auto 40px;background:#fff;color:#20291F;padding:56px 60px;min-height:1000px;
+  box-shadow:0 10px 40px rgba(0,0,0,.35);}
+.hoja .cab{text-align:center;border-bottom:2px solid #2F5233;padding-bottom:18px;}
+.hoja .resto{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#66705F;font-weight:600;}
+.hoja h1{font-family:'Fraunces',Georgia,serif;font-size:38px;font-weight:700;margin:6px 0 2px;color:#20291F;}
+.hoja .fecha{font-size:13px;color:#66705F;}
+.hoja .precio{font-family:'Fraunces',Georgia,serif;font-size:20px;font-weight:600;color:#2F5233;margin-top:8px;}
+.hoja h2{font-family:'Fraunces',Georgia,serif;font-size:15px;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:#2F5233;text-align:center;margin:30px 0 12px;}
+.hoja h2::after{content:"";display:block;width:44px;height:2px;background:#DDA321;margin:8px auto 0;}
+.hoja .plato-linea{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:7px 0;}
+.hoja .plato-nombre{font-family:'Fraunces',Georgia,serif;font-size:18px;font-weight:600;}
+.hoja .plato-desc{font-size:12.5px;color:#66705F;margin-top:1px;}
+.hoja .plato-al{font-size:14px;white-space:nowrap;letter-spacing:2px;}
+.hoja .leyenda{margin-top:36px;border-top:1px solid #D8DCD2;padding-top:14px;}
+.hoja .leyenda-titulo{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#66705F;margin-bottom:8px;}
+.hoja .leyenda-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 14px;font-size:11.5px;color:#20291F;}
+.hoja .pie{margin-top:20px;text-align:center;font-size:11px;color:#66705F;font-style:italic;}
+/* ── Cuadro oficial de alérgenos ── */
+.hoja-cuadro{max-width:1050px;}
+.tabla-al{width:100%;border-collapse:collapse;margin-top:18px;}
+.tabla-al th,.tabla-al td{border:1px solid #C9CEC2;padding:4px 6px;font-size:11.5px;}
+.tabla-al thead th{background:#EDF0E8;}
+.tabla-al th.col-al{width:32px;text-align:center;vertical-align:bottom;padding:6px 2px;}
+.tabla-al th.col-al .icono-al{font-size:14px;display:block;margin-top:4px;}
+.tabla-al th.col-al .vert{writing-mode:vertical-rl;transform:rotate(180deg);font-size:9.5px;font-weight:600;margin:0 auto;display:block;height:84px;}
+.tabla-al td.celda{text-align:center;font-size:13px;color:#20291F;}
+.tabla-al tr.fila-seccion td{background:#2F5233;color:#fff;font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:5px 8px;}
+.tabla-al tr.fila-sub td{background:#EDF0E8;font-weight:600;font-size:11px;}
+.tabla-al td.nombre-plato{font-size:12px;}
+.tabla-al tbody tr:nth-child(even) td.nombre-plato,.tabla-al tbody tr:nth-child(even) td.celda{background:#FAFBF8;}
+/* ── Plantilla hotel bilingüe ── */
+.hoja-hotel{font-family:'Inter',Arial,sans-serif;}
+.hh-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+.hh-logo{max-height:64px;max-width:230px;object-fit:contain;}
+.hh-nombre-resto{font-size:22px;font-weight:700;color:#20291F;}
+.hh-marca{font-size:15px;color:#20291F;font-weight:600;margin-top:6px;}
+.hh-linea-titulo{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:20px;flex-wrap:wrap;}
+.hh-titulo{font-size:23px;font-weight:700;color:#20291F;}
+.hh-fecha{font-size:13px;font-weight:600;color:#20291F;}
+.hoja-hotel h2.hh-seccion{font-family:'Inter',Arial,sans-serif;font-size:16px;font-weight:700;letter-spacing:.02em;
+  text-transform:none;color:#20291F;text-align:center;margin:30px auto 14px;display:table;
+  border-bottom:2px solid #20291F;padding:0 20px 6px;}
+.hoja-hotel h2.hh-seccion::after{display:none;}
+.ph{text-align:center;padding:7px 0;}
+.ph-nombre{font-size:16.5px;font-weight:700;color:#20291F;}
+.ph-nombre sup{color:#B23A3A;font-size:10px;font-weight:700;margin-left:4px;}
+.ph-en{font-size:12px;font-style:italic;color:#555;}
+.hh-nota{text-align:center;font-size:15px;font-weight:700;margin-top:32px;color:#20291F;}
+.hh-nota .en{display:block;font-weight:600;font-style:italic;font-size:13px;}
+.hh-precios{text-align:center;margin-top:20px;font-size:14px;font-weight:700;color:#20291F;}
+.hh-precios div{margin:3px 0;}
+.leyenda-hotel{display:flex;flex-wrap:wrap;justify-content:center;gap:12px 16px;margin-top:34px;}
+.lh-item{display:flex;align-items:center;gap:3px;}
+.lh-num{font-size:24px;font-weight:300;color:#444;line-height:1;}
+.lh-cuerpo{display:flex;flex-direction:column;align-items:center;}
+.lh-cuerpo span{font-size:17px;line-height:1;}
+.lh-cuerpo small{font-size:8px;letter-spacing:.04em;text-transform:uppercase;color:#555;margin-top:2px;max-width:70px;text-align:center;}
+.hh-pie{margin-top:26px;border-top:1px solid #999;border-bottom:1px solid #999;padding:7px 4px;text-align:center;font-size:11px;color:#333;line-height:1.5;}
+/* ── Hoja trasera de ingredientes (doble cara) ── */
+.hoja-salto{page-break-before:always;break-before:page;}
+h2.hh-tras{font-family:'Inter',Arial,sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.04em;color:#20291F;margin:28px 0 16px;text-decoration:underline;text-underline-offset:5px;text-align:left;}
+h2.hh-tras::after{display:none;}
+.pt{margin:0 0 18px;}
+.pt-nombre{font-size:15.5px;font-weight:700;color:#20291F;}
+.pt-linea{font-size:12.5px;color:#333;font-style:italic;margin-top:1px;}
+.pt-linea b{font-style:normal;}
+@media print{
+  html, body{overflow:visible !important;height:auto !important;}
+  body > *{display:none !important;}
+  body #capaImpresion{display:block !important;position:static !important;inset:auto !important;
+    background:#fff;padding:0;overflow:visible !important;height:auto !important;}
+  .barra-impresion{display:none !important;}
+  .hoja{box-shadow:none;max-width:none;margin:0;padding:30px 40px;min-height:0;overflow:visible !important;}
+  .hoja-salto{page-break-before:always !important;break-before:page !important;}
+  @page{margin:12mm;}
+}
+@media (prefers-reduced-motion: reduce){.tarjeta{transition:none;}}
+@media (max-width:640px){.hoja{padding:30px 22px;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="cabecera-int">
+    <div>
+      <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v11<span id="estadoNube"></span></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
+      <button id="btnCopia" class="btn-blanco">⇅ Copia</button>
+      <button id="btnModo" class="btn-blanco">✎ Modo edición</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="tabsSecciones" class="fila-tabs"></div>
+  <div id="tabsSub" class="fila-subs" style="display:none;"></div>
+  <div class="fila-filtros">
+    <input id="buscador" class="campo" style="flex:1 1 220px;" placeholder="Buscar plato o ingrediente…">
+    <select id="filtroAl" class="campo" style="flex:0 1 260px;"></select>
+    <button id="btnNuevo" class="btn-verde" style="display:none;">+ Añadir plato</button>
+    <button id="btnEscanear" class="btn-linea" style="display:none;">📷 Desde foto</button>
+    <input type="file" id="fileEscanear" accept="image/*,application/pdf" style="display:none;">
+    <input type="file" id="fileEscanearCam" accept="image/*" capture="environment" style="display:none;">
+  </div>
+  <div id="notaFiltro" style="font-size:13px;color:var(--suave);margin-bottom:8px;display:none;"></div>
+  <div id="lista"></div>
+</main>
+
+<div id="aviso"></div>
+<div id="capaModal"></div>
+<div id="capaImpresion"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   SINCRONIZACIÓN EN LA NUBE (opcional) — Firebase Firestore
+   ──────────────────────────────────────────────────────────
+   Si FIREBASE_CONFIG es null, la app funciona igual que siempre
+   (datos solo en el dispositivo). Para sincronizar varios móviles:
+
+   1) Crea un proyecto gratis en https://console.firebase.google.com
+   2) Dentro del proyecto: Compilación → Firestore Database → Crear
+      base de datos → empezar en modo de producción → ubicación
+      europe-west (o la más cercana).
+   3) En la pestaña "Reglas" de Firestore pega esto y publica:
+
+        rules_version = '2';
+        service cloud.firestore {
+          match /databases/{database}/documents {
+            match /restaurantes/{codigo}/{documento=**} {
+              allow read, write: if true;
+            }
+          }
+        }
+
+   4) Configuración del proyecto (rueda dentada) → Tus apps →
+      icono </> (app web) → registrar app → copia el objeto
+      firebaseConfig y pégalo abajo sustituyendo el null.
+   5) Cambia CODIGO_EQUIPO por un código largo y difícil de adivinar
+      (funciona como contraseña: quien lo tenga en su app comparte
+      el mismo recetario). Ej.: "laplaza-K93bTx41-recetario"
+   6) Sube el archivo al repo: todos los APK generados con el mismo
+      código quedarán sincronizados entre sí.
+   ══════════════════════════════════════════════════════════ */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBNSmPNSufNRs_pQlcZBzGESSsAhTq5cX4",
+  authDomain: "listadiplatos.firebaseapp.com",
+  projectId: "listadiplatos",
+  storageBucket: "listadiplatos.firebasestorage.app",
+  messagingSenderId: "979755835088",
+  appId: "1:979755835088:web:b411d4efa32170ae72c8d5"
+};
+const CODIGO_EQUIPO = "jose403060";
+
+/* ══════════════════════════════════════════════════════════
+   AÑADIR PLATOS DESDE FOTO (opcional) — API de Gemini
+   ──────────────────────────────────────────────────────────
+   Permite fotografiar una carta, ficha o pizarra y extraer los
+   platos con sus ingredientes automáticamente. Para activarlo:
+   1) Entra en https://aistudio.google.com/apikey con tu cuenta
+      de Google y pulsa "Crear clave de API" (elige tu proyecto
+      de Firebase o crea uno). Es gratis dentro de la capa gratuita.
+   2) Pega la clave abajo entre comillas, ej.: "AIzaSy...".
+   Si se deja en null, el botón de escanear no aparece y todo
+   lo demás funciona igual.
+   ══════════════════════════════════════════════════════════ */
+const GEMINI_API_KEY_BRUTA = "__CLAVE_GEMINI__";
+const GEMINI_API_KEY = (GEMINI_API_KEY_BRUTA && !GEMINI_API_KEY_BRUTA.includes("__CLAVE")) ? GEMINI_API_KEY_BRUTA : null;
+const GEMINI_MODELO = "gemini-3.5-flash";
+/* Si el modelo principal deja de existir, se prueban estos por orden: */
+const GEMINI_RESPALDO = ["gemini-3.5-flash", "gemini-flash-latest", "gemini-3.1-flash-lite", "gemini-3-flash-preview"];
+
+/* ── Secciones ── */
+const SECCIONES = [
+  { id:"menu", nombre:"Menú del día", icono:"🍽️", sub:[
+    {id:"primeros",nombre:"Primeros"},{id:"segundos",nombre:"Segundos"},{id:"postres_menu",nombre:"Postres"}]},
+  { id:"carta", nombre:"Carta", icono:"📖", sub:[
+    {id:"entrantes",nombre:"Entrantes"},{id:"carnes",nombre:"Carnes"},{id:"pescados",nombre:"Pescados"},{id:"postres_esp",nombre:"Postres especiales"}]},
+  { id:"tapas", nombre:"Tapas", icono:"🥘", sub:[
+    {id:"tapas_barra",nombre:"Tapas de barra"},{id:"tapas_esp",nombre:"Tapas especiales"}]},
+  { id:"experiencias", nombre:"Experiencias", icono:"✨", sub:[
+    {id:"menus_esp",nombre:"Menús especiales"},{id:"catas",nombre:"Catas maridadas"},{id:"cocteles",nombre:"Cócteles"}]},
+];
+const SUB_A_PRINCIPAL = {}, NOMBRE_SUB = {};
+SECCIONES.forEach(s => s.sub.forEach(sub => { SUB_A_PRINCIPAL[sub.id]=s; NOMBRE_SUB[sub.id]=sub.nombre; }));
+
+/* ── 14 alérgenos UE 1169/2011 ── */
+const ALERGENOS = [
+  {id:"gluten",nombre:"Gluten",icono:"🌾"},{id:"crustaceos",nombre:"Crustáceos",icono:"🦐"},
+  {id:"huevos",nombre:"Huevos",icono:"🥚"},{id:"pescado",nombre:"Pescado",icono:"🐟"},
+  {id:"cacahuetes",nombre:"Cacahuetes",icono:"🥜"},{id:"soja",nombre:"Soja",icono:"🫘"},
+  {id:"lacteos",nombre:"Lácteos",icono:"🥛"},{id:"frutos_cascara",nombre:"Frutos de cáscara",icono:"🌰"},
+  {id:"apio",nombre:"Apio",icono:"🥬"},{id:"mostaza",nombre:"Mostaza",icono:"🟡"},
+  {id:"sesamo",nombre:"Sésamo",icono:"⚪"},{id:"sulfitos",nombre:"Sulfitos",icono:"🍷"},
+  {id:"altramuces",nombre:"Altramuces",icono:"🫛"},{id:"moluscos",nombre:"Moluscos",icono:"🦪"},
+];
+const AL_MAP = Object.fromEntries(ALERGENOS.map(a => [a.id, a]));
+
+/* Numeración y nombres de alérgenos del menú impreso bilingüe (formato hotel) */
+const NUMERO_AL = { pescado:1, frutos_cascara:2, lacteos:3, moluscos:4, gluten:5, crustaceos:6, huevos:7, cacahuetes:8, soja:9, apio:10, mostaza:11, sesamo:12, altramuces:13, sulfitos:14 };
+const NOMBRE_NUM = { pescado:"Pescado", frutos_cascara:"Frutos secos", lacteos:"Lácteos", moluscos:"Moluscos", gluten:"Cereales con gluten", crustaceos:"Crustáceos", huevos:"Huevos", cacahuetes:"Cacahuetes", soja:"Soja", apio:"Apio", mostaza:"Mostaza", sesamo:"Sésamo", altramuces:"Altramuz", sulfitos:"Sulfitos" };
+const ORDEN_NUM = Object.entries(NUMERO_AL).sort((a,b) => a[1]-b[1]);
+function numerosAlergenos(p){
+  return p.alergenos.map(a => NUMERO_AL[a]).filter(Boolean).sort((x,y) => x-y).join("/");
+}
+function leyendaHotel(){
+  return `<div class="leyenda-hotel">
+    ${ORDEN_NUM.map(([alId, num]) => `<div class="lh-item">
+      <span class="lh-num">${num}</span>
+      <span class="lh-cuerpo"><span>${AL_MAP[alId].icono}</span><small>${esc(NOMBRE_NUM[alId])}</small></span>
+    </div>`).join("")}
+  </div>`;
+}
+function fechaHoyLarga(){
+  const f = new Date().toLocaleDateString("es-ES", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
+  return f.charAt(0).toUpperCase() + f.slice(1);
+}
+
+const PISTAS = [
+  { al:"gluten", re:/harina|trigo|pan(?!ceta)|pasta|espagueti|macarr|fideo|cerveza|cebada|centeno|avena|espelta|rebozad|empanad|hojaldre|masa|picatoste|couscous|cuscús|bechamel|galleta|bizcocho/i },
+  { al:"crustaceos", re:/gamba|langostino|cigala|bogavante|langosta|carabinero|camarón|camaron|cangrejo|nécora|necora|buey de mar|percebe|quisquilla/i },
+  { al:"huevos", re:/huevo|yema|clara|mayonesa|alioli|allioli|merengue|natilla|flan|tortilla|rebozad|bizcocho/i },
+  { al:"pescado", re:/pescado|merluza|bacalao|atún|atun|bonito|salmón|salmon|lubina|dorada|rape|sardina|boquerón|boqueron|anchoa|rodaballo|lenguado|caballa|trucha|fumet|corvina|salmonete/i },
+  { al:"cacahuetes", re:/cacahuete|maní|mani\b/i },
+  { al:"soja", re:/soja|soya|tofu|edamame|miso|teriyaki/i },
+  { al:"lacteos", re:/leche|nata|queso|mantequilla|yogur|lácteo|lacteo|crema de leche|parmesano|manchego|mascarpone|mozzarella|ricotta|helado/i },
+  { al:"frutos_cascara", re:/almendra|nuez|nueces|avellana|pistacho|anacardo|piñón|piñon|pinon|castaña|castana|macadamia|pacana|praliné|praline|turrón|turron/i },
+  { al:"apio", re:/apio/i },
+  { al:"mostaza", re:/mostaza/i },
+  { al:"sesamo", re:/sésamo|sesamo|tahini|tahín|ajonjolí|ajonjoli/i },
+  { al:"sulfitos", re:/vino|vinagre|sulfito|cava|brandy|jerez|sidra|fruta desecada|orejones|pasas/i },
+  { al:"altramuces", re:/altramuz|altramuces|lupino/i },
+  { al:"moluscos", re:/mejillón|mejillon|almeja|calamar|sepia|pulpo|chipirón|chipiron|berberecho|vieira|zamburiña|zamburina|ostra|navaja|caracol/i },
+];
+function sugerirAlergenos(ings){
+  const t = ings.join(" "); const s = new Set();
+  PISTAS.forEach(p => { if (p.re.test(t)) s.add(p.al); });
+  return [...s];
+}
+
+/* ── Estado ── */
+let platos = [], fotos = {}, menus = [], modo = "consulta";
+let seccion = "todas", subseccion = "todas", busqueda = "", filtroAl = "";
+
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* ── Almacenamiento universal ──
+   Dentro de Claude usa window.storage; en la app Android (Capacitor)
+   o en cualquier navegador usa IndexedDB, que guarda los datos
+   de forma permanente en el dispositivo. */
+const HAY_CLAUDE = typeof window.storage !== "undefined";
+let dbPromise = null;
+function abrirDB(){
+  if (dbPromise) return dbPromise;
+  dbPromise = new Promise((res, rej) => {
+    const req = indexedDB.open("recetario-db", 1);
+    req.onupgradeneeded = () => req.result.createObjectStore("kv");
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+  return dbPromise;
+}
+function idb(modoTx, fn){
+  return abrirDB().then(db => new Promise((res, rej) => {
+    const tx = db.transaction("kv", modoTx);
+    const r = fn(tx.objectStore("kv"));
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  }));
+}
+async function stGet(k){
+  if (HAY_CLAUDE){ try{ const r = await window.storage.get(k); return r ? r.value : null; }catch{ return null; } }
+  try { const v = await idb("readonly", st => st.get(k)); return v ?? null; } catch { return null; }
+}
+async function stSet(k,v){
+  if (HAY_CLAUDE){ await window.storage.set(k,v); return; }
+  await idb("readwrite", st => st.put(v, k));
+}
+async function stDel(k){
+  if (HAY_CLAUDE){ try{ await window.storage.delete(k); }catch(e){} return; }
+  try { await idb("readwrite", st => st.delete(k)); } catch(e){}
+}
+async function guardarPlatosStore(){ await stSet("platos-meta", JSON.stringify(platos)); nubePlatos(); }
+async function guardarMenusStore(){ await stSet("menus-v1", JSON.stringify(menus)); nubeMenus(); }
+async function guardarFotoStore(id, data){ await stSet("foto:" + id, data); nubeFoto(id, data); }
+async function borrarFotoStore(id){ await stDel("foto:" + id); nubeFoto(id, null); }
+
+/* ── Sincronización con Firestore ── */
+let nube = null;
+let recibiendoNube = false;
+const baseNube = () => "restaurantes/" + CODIGO_EQUIPO;
+
+function pintarEstadoNube(estado){
+  const el = document.getElementById("estadoNube");
+  if (!el) return;
+  if (estado === "nube") el.textContent = " · ☁️ sincronizado";
+  else if (estado === "error") el.textContent = " · ⚠️ nube no disponible (funcionando en local)";
+  else el.textContent = " · 🔒 solo en este dispositivo";
+}
+
+async function iniciarNube(){
+  if (!FIREBASE_CONFIG){ pintarEstadoNube("local"); return; }
+  try {
+    const appMod = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js");
+    const f = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js");
+    const app = appMod.initializeApp(FIREBASE_CONFIG);
+    let db;
+    try { db = f.initializeFirestore(app, { localCache: f.persistentLocalCache() }); }
+    catch(e){ db = f.getFirestore(app); }
+    nube = { db, f };
+
+    /* Platos: escucha en tiempo real */
+    f.onSnapshot(f.doc(db, baseNube() + "/datos/platos"), async snap => {
+      if (snap.metadata.hasPendingWrites) return;
+      if (!snap.exists()){
+        /* La nube está vacía y aquí hay datos: subir lo local (primera vez) */
+        if (platos.length > 0){
+          nubePlatos(); nubeMenus();
+          for (const p of platos){
+            if (p.tieneFoto){
+              const foto = fotos[p.id] || await stGet("foto:" + p.id);
+              if (foto) nubeFoto(p.id, foto);
+            }
+          }
+        }
+        return;
+      }
+      try {
+        recibiendoNube = true;
+        platos = JSON.parse(snap.data().json || "[]");
+        await stSet("platos-meta", JSON.stringify(platos));
+        render();
+      } catch(e){} finally { recibiendoNube = false; }
+    }, () => pintarEstadoNube("error"));
+
+    /* Menús */
+    f.onSnapshot(f.doc(db, baseNube() + "/datos/menus"), async snap => {
+      if (snap.metadata.hasPendingWrites || !snap.exists()) return;
+      try {
+        recibiendoNube = true;
+        menus = JSON.parse(snap.data().json || "[]");
+        await stSet("menus-v1", JSON.stringify(menus));
+      } catch(e){} finally { recibiendoNube = false; }
+    });
+
+    /* Fotos */
+    f.onSnapshot(f.collection(db, baseNube() + "/fotos"), snap => {
+      if (snap.metadata.hasPendingWrites) return;
+      let hayCambios = false;
+      snap.docChanges().forEach(ch => {
+        const id = ch.doc.id;
+        if (ch.type === "removed"){ delete fotos[id]; stDel("foto:" + id); hayCambios = true; }
+        else { const d = ch.doc.data().data; if (d){ fotos[id] = d; stSet("foto:" + id, d); hayCambios = true; } }
+      });
+      if (hayCambios) renderLista();
+    });
+
+    pintarEstadoNube("nube");
+  } catch(e){
+    pintarEstadoNube("error");
+  }
+}
+
+async function nubePlatos(){
+  if (!nube || recibiendoNube) return;
+  try { await nube.f.setDoc(nube.f.doc(nube.db, baseNube() + "/datos/platos"), { json: JSON.stringify(platos), t: Date.now() }); }
+  catch(e){ pintarEstadoNube("error"); }
+}
+async function nubeMenus(){
+  if (!nube || recibiendoNube) return;
+  try { await nube.f.setDoc(nube.f.doc(nube.db, baseNube() + "/datos/menus"), { json: JSON.stringify(menus), t: Date.now() }); }
+  catch(e){}
+}
+async function nubeFoto(id, data){
+  if (!nube || recibiendoNube) return;
+  try {
+    const ref = nube.f.doc(nube.db, baseNube() + "/fotos/" + id);
+    if (data) await nube.f.setDoc(ref, { data, t: Date.now() });
+    else await nube.f.deleteDoc(ref);
+  } catch(e){}
+}
+
+/* ── Compresión de imagen ── */
+function comprimirImagen(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 900;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX){ const f = MAX/Math.max(w,h); w = Math.round(w*f); h = Math.round(h*f); }
+        const c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        c.getContext("2d").drawImage(img, 0, 0, w, h);
+        resolve(c.toDataURL("image/jpeg", 0.72));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ── Aviso flotante ── */
+let tAviso;
+function notificar(msg){
+  const el = document.getElementById("aviso");
+  el.textContent = msg; el.style.display = "block";
+  clearTimeout(tAviso);
+  tAviso = setTimeout(() => el.style.display = "none", 2500);
+}
+
+/* ── Render de navegación ── */
+function renderTabs(){
+  const cont = document.getElementById("tabsSecciones");
+  let html = `<button class="tab-sec${seccion==="todas"?" activa":""}" data-sec="todas">Todo</button>`;
+  SECCIONES.forEach(s => {
+    html += `<button class="tab-sec${seccion===s.id?" activa":""}" data-sec="${s.id}">${s.icono} ${esc(s.nombre)}</button>`;
+  });
+  cont.innerHTML = html;
+  cont.querySelectorAll("button").forEach(b => b.onclick = () => {
+    seccion = b.dataset.sec; subseccion = "todas"; render();
+  });
+
+  const contSub = document.getElementById("tabsSub");
+  if (seccion === "todas"){ contSub.style.display = "none"; contSub.innerHTML = ""; }
+  else {
+    const s = SECCIONES.find(x => x.id === seccion);
+    let h = `<button class="tab-sub${subseccion==="todas"?" activa":""}" data-sub="todas">Todas</button>`;
+    s.sub.forEach(sub => h += `<button class="tab-sub${subseccion===sub.id?" activa":""}" data-sub="${sub.id}">${esc(sub.nombre)}</button>`);
+    contSub.innerHTML = h; contSub.style.display = "flex";
+    contSub.querySelectorAll("button").forEach(b => b.onclick = () => { subseccion = b.dataset.sub; render(); });
+  }
+}
+
+/* ── Render del listado ── */
+function platosVisibles(){
+  return platos.filter(p => {
+    if (seccion !== "todas" && SUB_A_PRINCIPAL[p.subseccion]?.id !== seccion) return false;
+    if (subseccion !== "todas" && p.subseccion !== subseccion) return false;
+    if (filtroAl && p.alergenos.includes(filtroAl)) return false;
+    if (busqueda){
+      const t = (p.nombre + " " + p.ingredientes.join(" ")).toLowerCase();
+      if (!t.includes(busqueda.toLowerCase())) return false;
+    }
+    return true;
+  });
+}
+
+function chipsAlergenos(p){
+  if (p.alergenos.length === 0)
+    return `<span class="chip-al ok">✓ Sin alérgenos declarados</span>`;
+  return p.alergenos.map(a => {
+    const al = AL_MAP[a]; if (!al) return "";
+    return `<span class="chip-al">${al.icono} ${esc(al.nombre)}</span>`;
+  }).join("");
+}
+
+function renderLista(){
+  const cont = document.getElementById("lista");
+  const vis = platosVisibles();
+  const nota = document.getElementById("notaFiltro");
+  if (filtroAl){
+    nota.innerHTML = `Mostrando solo platos <strong>sin ${esc(AL_MAP[filtroAl].nombre.toLowerCase())}</strong>.`;
+    nota.style.display = "block";
+  } else nota.style.display = "none";
+
+  if (vis.length === 0){
+    cont.innerHTML = `<div class="vacio">
+      <div style="font-size:40px;">🍳</div>
+      <div class="display" style="font-size:20px;margin-top:8px;color:var(--tinta);">
+        ${platos.length === 0 ? "El recetario está vacío" : "Ningún plato coincide con el filtro"}</div>
+      <div style="font-size:14px;margin-top:6px;">
+        ${platos.length === 0
+          ? "Activa el modo edición y pulsa «Añadir plato» para empezar."
+          : "Prueba a cambiar la sección, la búsqueda o el filtro de alérgenos."}</div>
+    </div>`;
+    return;
+  }
+  cont.innerHTML = `<div class="rejilla">` + vis.map(p => {
+    const foto = fotos[p.id];
+    const cab = foto
+      ? `<img src="${foto}" alt="${esc(p.nombre)}" style="width:100%;height:150px;object-fit:cover;display:block;">`
+      : `<div style="height:90px;background:linear-gradient(135deg,#EDF0E8,#E2E7DB);display:flex;align-items:center;justify-content:center;font-size:32px;">${SUB_A_PRINCIPAL[p.subseccion]?.icono || "🍽️"}</div>`;
+    return `<div class="tarjeta" data-id="${p.id}">
+      ${cab}
+      <div style="padding:12px 14px 14px;">
+        <div class="etiqueta-sec">${esc(SUB_A_PRINCIPAL[p.subseccion]?.nombre || "")} · ${esc(NOMBRE_SUB[p.subseccion] || "")}</div>
+        <div class="display" style="font-size:18px;font-weight:600;margin:3px 0 8px;">${esc(p.nombre)}</div>
+        <div class="grupo-chips" style="gap:4px;">${chipsAlergenos(p)}</div>
+      </div>
+    </div>`;
+  }).join("") + `</div>`;
+  cont.querySelectorAll(".tarjeta").forEach(t => t.onclick = () => abrirFicha(t.dataset.id));
+}
+
+function render(){ renderTabs(); renderLista(); }
+
+/* ── Ficha de consulta ── */
+function abrirFicha(id){
+  const p = platos.find(x => x.id === id); if (!p) return;
+  const foto = fotos[id];
+  const capa = document.getElementById("capaModal");
+  capa.innerHTML = `<div class="velo" id="velo">
+    <div class="modal" onclick="event.stopPropagation()">
+      ${foto ? `<img src="${foto}" alt="${esc(p.nombre)}" style="width:100%;height:240px;object-fit:cover;display:block;">` : ""}
+      <div style="padding:20px 24px 24px;">
+        <div class="etiqueta-sec">${esc(SUB_A_PRINCIPAL[p.subseccion]?.nombre || "")} · ${esc(NOMBRE_SUB[p.subseccion] || "")}</div>
+        <h2 class="display" style="font-size:26px;font-weight:700;margin:4px 0 4px;">${esc(p.nombre)}</h2>
+        ${p.descripcion ? `<p style="font-size:14px;color:var(--suave);margin:4px 0 0;">${esc(p.descripcion)}</p>` : ""}
+        <div style="margin-top:18px;">
+          <div class="titulo-bloque">Ingredientes</div>
+          <div class="grupo-chips">${p.ingredientes.map(i => `<span class="chip-ing">${esc(i)}</span>`).join("")}</div>
+        </div>
+        <div style="margin-top:18px;">
+          <div class="titulo-bloque">Alérgenos declarados</div>
+          <div class="grupo-chips">${chipsAlergenos(p)}</div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:24px;justify-content:flex-end;">
+          ${modo === "edicion" ? `
+            <button class="btn-linea peligro" id="btnBorrar">Eliminar</button>
+            <button class="btn-linea" id="btnEditar">Editar</button>` : ""}
+          <button class="btn-verde" id="btnCerrar">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById("velo").onclick = cerrarModal;
+  document.getElementById("btnCerrar").onclick = cerrarModal;
+  if (modo === "edicion"){
+    document.getElementById("btnBorrar").onclick = () => borrarPlato(id);
+    document.getElementById("btnEditar").onclick = () => { cerrarModal(); abrirFormulario(id); };
+  }
+}
+function cerrarModal(){ document.getElementById("capaModal").innerHTML = ""; }
+
+async function borrarPlato(id){
+  if (!confirm("¿Eliminar este plato de forma permanente?")) return;
+  try {
+    platos = platos.filter(p => p.id !== id);
+    await guardarPlatosStore();
+    await borrarFotoStore(id);
+    delete fotos[id];
+    cerrarModal(); render();
+    notificar("Plato eliminado");
+  } catch { notificar("No se pudo eliminar."); }
+}
+
+/* ── Formulario de alta / edición de plato ── */
+function abrirFormulario(id){
+  const p = id ? platos.find(x => x.id === id) : null;
+  let ingredientes = p ? [...p.ingredientes] : [];
+  let alergenos = p ? [...p.alergenos] : [];
+  let foto = p ? (fotos[p.id] || null) : null;
+  let fotoNueva = null;
+
+  const capa = document.getElementById("capaModal");
+  capa.innerHTML = `<div class="velo">
+    <div class="modal ancho" onclick="event.stopPropagation()" style="padding:22px 24px 24px;">
+      <h2 class="display" style="font-size:22px;font-weight:700;margin:0;">${p ? "Editar plato" : "Nuevo plato"}</h2>
+      <div style="display:grid;gap:14px;margin-top:16px;">
+        <div>
+          <label class="campo-lbl" for="fNombre">Nombre del plato *</label>
+          <input class="campo" id="fNombre" value="${esc(p?.nombre || "")}" placeholder="Ej.: Merluza en salsa verde">
+        </div>
+        <div>
+          <label class="campo-lbl" for="fNombreEn">Nombre en inglés <span style="font-weight:400;color:var(--suave);">(opcional, para el menú bilingüe)</span></label>
+          <input class="campo" id="fNombreEn" value="${esc(p?.nombreEn || "")}" placeholder="Ej.: Hake in green sauce">
+        </div>
+        <div>
+          <label class="campo-lbl" for="fSub">Sección *</label>
+          <select class="campo" id="fSub">
+            ${SECCIONES.map(s => `<optgroup label="${esc(s.nombre)}">
+              ${s.sub.map(sub => `<option value="${sub.id}"${p?.subseccion===sub.id?" selected":""}>${esc(sub.nombre)}</option>`).join("")}
+            </optgroup>`).join("")}
+          </select>
+        </div>
+        <div>
+          <label class="campo-lbl" for="fDesc">Descripción (opcional)</label>
+          <textarea class="campo" id="fDesc" rows="2" placeholder="Nota breve para el equipo de sala…">${esc(p?.descripcion || "")}</textarea>
+        </div>
+        <div>
+          <label class="campo-lbl" for="fIng">Ingredientes * <span style="font-weight:400;color:var(--suave);">(sin cantidades — separa con comas y pulsa Añadir)</span></label>
+          <div style="display:flex;gap:8px;">
+            <input class="campo" id="fIng" placeholder="Ej.: merluza, harina, ajo, vino blanco, guisantes">
+            <button class="btn-linea" id="fAddIng">Añadir</button>
+          </div>
+          <div class="grupo-chips" id="fListaIng" style="margin-top:8px;"></div>
+        </div>
+        <div>
+          <label class="campo-lbl">Alérgenos declarados</label>
+          <div id="fSugerencias"></div>
+          <div class="grupo-chips" id="fAlergenos"></div>
+        </div>
+        <div>
+          <label class="campo-lbl">Fotografía (opcional)</label>
+          <div id="fZonaFoto"></div>
+          <input type="file" id="fFile" accept="image/*" style="display:none;">
+          <input type="file" id="fFileCam" accept="image/*" capture="environment" style="display:none;">
+        </div>
+        <div id="fError" style="color:#B4483C;font-size:13px;font-weight:600;display:none;"></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:4px;">
+          <button class="btn-linea" id="fCancelar">Cancelar</button>
+          <button class="btn-verde" id="fGuardar">${p ? "Guardar cambios" : "Añadir plato"}</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  const $ = x => document.getElementById(x);
+
+  function pintarIngredientes(){
+    $("fListaIng").innerHTML = ingredientes.map((ing, i) =>
+      `<span class="chip-ing">${esc(ing)}<button data-i="${i}" aria-label="Quitar ${esc(ing)}">✕</button></span>`).join("");
+    $("fListaIng").querySelectorAll("button").forEach(b => b.onclick = () => {
+      ingredientes.splice(Number(b.dataset.i), 1);
+      pintarIngredientes(); pintarSugerencias();
+    });
+  }
+  function pintarAlergenos(){
+    $("fAlergenos").innerHTML = ALERGENOS.map(a =>
+      `<button class="btn-alergeno${alergenos.includes(a.id)?" activo":""}" data-al="${a.id}">${a.icono} ${esc(a.nombre)}</button>`).join("");
+    $("fAlergenos").querySelectorAll("button").forEach(b => b.onclick = () => {
+      const al = b.dataset.al;
+      alergenos = alergenos.includes(al) ? alergenos.filter(x => x !== al) : [...alergenos, al];
+      pintarAlergenos(); pintarSugerencias();
+    });
+  }
+  function pintarSugerencias(){
+    const sug = sugerirAlergenos(ingredientes).filter(a => !alergenos.includes(a));
+    if (sug.length === 0){ $("fSugerencias").innerHTML = ""; return; }
+    $("fSugerencias").innerHTML = `<div class="caja-sugerencia">💡 Según los ingredientes, revisa si contiene: ` +
+      sug.map(a => `<button data-al="${a}">+ ${AL_MAP[a].icono} ${esc(AL_MAP[a].nombre)}</button>`).join("") + `</div>`;
+    $("fSugerencias").querySelectorAll("button").forEach(b => b.onclick = () => {
+      alergenos.push(b.dataset.al);
+      pintarAlergenos(); pintarSugerencias();
+    });
+  }
+  function pintarFoto(){
+    if (foto){
+      $("fZonaFoto").innerHTML = `<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <img src="${foto}" alt="Vista previa" style="width:110px;height:80px;object-fit:cover;border-radius:10px;border:1px solid var(--linea);">
+        <button class="btn-linea" id="fCam" title="Hacer foto nueva">📷</button>
+        <button class="btn-linea" id="fGal" title="Elegir de la galería">🖼</button>
+        <button class="btn-linea peligro" id="fQuitar">Quitar</button>
+      </div>`;
+      $("fCam").onclick = () => $("fFileCam").click();
+      $("fGal").onclick = () => $("fFile").click();
+      $("fQuitar").onclick = () => { foto = null; fotoNueva = "BORRAR"; pintarFoto(); };
+    } else {
+      $("fZonaFoto").innerHTML = `<div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn-linea" id="fCam">📷 Hacer foto</button>
+        <button class="btn-linea" id="fGal">🖼 Galería</button>
+      </div>`;
+      $("fCam").onclick = () => $("fFileCam").click();
+      $("fGal").onclick = () => $("fFile").click();
+    }
+  }
+
+  function agregarIngredientes(){
+    const nuevos = $("fIng").value.split(/[,;\n]/).map(s => s.trim()).filter(Boolean);
+    if (nuevos.length === 0) return;
+    ingredientes.push(...nuevos);
+    $("fIng").value = "";
+    pintarIngredientes(); pintarSugerencias();
+  }
+
+  $("fAddIng").onclick = agregarIngredientes;
+  $("fIng").addEventListener("keydown", e => { if (e.key === "Enter"){ e.preventDefault(); agregarIngredientes(); } });
+  const manejarFotoElegida = async e => {
+    const file = e.target.files?.[0]; if (!file) return;
+    e.target.value = "";
+    try { const data = await comprimirImagen(file); foto = data; fotoNueva = data; pintarFoto(); }
+    catch { mostrarError("No se pudo procesar la imagen. Prueba con otra foto."); }
+  };
+  $("fFile").onchange = manejarFotoElegida;
+  $("fFileCam").onchange = manejarFotoElegida;
+  $("fCancelar").onclick = cerrarModal;
+
+  function mostrarError(msg){
+    const el = $("fError");
+    if (!msg){ el.style.display = "none"; return; }
+    el.textContent = msg; el.style.display = "block";
+  }
+
+  $("fGuardar").onclick = async () => {
+    const nombre = $("fNombre").value.trim();
+    if ($("fIng").value.trim()) agregarIngredientes();
+    if (!nombre){ mostrarError("El plato necesita un nombre."); return; }
+    if (ingredientes.length === 0){ mostrarError("Añade al menos un ingrediente."); return; }
+    mostrarError("");
+    $("fGuardar").disabled = true; $("fGuardar").textContent = "Guardando…";
+    const obj = {
+      id: p?.id || "p" + Date.now(),
+      nombre,
+      nombreEn: $("fNombreEn").value.trim(),
+      subseccion: $("fSub").value,
+      descripcion: $("fDesc").value.trim(),
+      ingredientes, alergenos,
+      tieneFoto: !!foto,
+    };
+    try {
+      const existe = platos.some(x => x.id === obj.id);
+      platos = existe ? platos.map(x => x.id === obj.id ? obj : x) : [...platos, obj];
+      await guardarPlatosStore();
+      if (fotoNueva && fotoNueva !== "BORRAR"){
+        await guardarFotoStore(obj.id, fotoNueva);
+        fotos[obj.id] = fotoNueva;
+      } else if (fotoNueva === "BORRAR"){
+        await borrarFotoStore(obj.id);
+        delete fotos[obj.id];
+      }
+      cerrarModal(); render();
+      notificar(existe ? "Plato actualizado" : "Plato añadido");
+    } catch {
+      $("fGuardar").disabled = false;
+      $("fGuardar").textContent = p ? "Guardar cambios" : "Añadir plato";
+      mostrarError("No se pudo guardar. Inténtalo de nuevo.");
+    }
+  };
+
+  pintarIngredientes(); pintarAlergenos(); pintarSugerencias(); pintarFoto();
+}
+
+/* ══════════════════════════════════════════════════════════
+   MENÚS IMPRIMIBLES
+   ══════════════════════════════════════════════════════════ */
+
+function abrirListaMenus(){
+  const capa = document.getElementById("capaModal");
+  const filas = menus.length === 0
+    ? `<div style="padding:24px 4px;color:var(--suave);font-size:14px;">Aún no hay menús guardados. Crea el primero: elige un título, un precio y los platos de cada apartado.</div>`
+    : menus.map(m => `<div class="fila-menu-guardado">
+        <div style="flex:1;min-width:0;">
+          <div class="display" style="font-size:16px;font-weight:600;">${esc(m.titulo)}</div>
+          <div style="font-size:12px;color:var(--suave);">${m.apartados.reduce((n,a)=>n+a.platoIds.length,0)} platos${m.precio ? " · " + esc(m.precio) : ""}</div>
+        </div>
+        <button class="btn-linea" data-ver="${m.id}" style="padding:6px 12px;">🖨 Ver</button>
+        <button class="btn-linea" data-edit="${m.id}" style="padding:6px 12px;">Editar</button>
+        <button class="btn-linea peligro" data-del="${m.id}" style="padding:6px 12px;">✕</button>
+      </div>`).join("");
+
+  capa.innerHTML = `<div class="velo" id="veloMenus">
+    <div class="modal" onclick="event.stopPropagation()" style="padding:22px 24px 24px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <h2 class="display" style="font-size:22px;font-weight:700;margin:0;">Menús imprimibles</h2>
+        <button class="btn-verde" id="btnNuevoMenu">+ Nuevo menú</button>
+      </div>
+      <button class="btn-linea" id="btnCuadro" style="margin-top:12px;width:100%;">📋 Cuadro oficial de alérgenos (imprimible)</button>
+      <div style="margin-top:10px;">${filas}</div>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+        <button class="btn-linea" id="btnCerrarMenus">Cerrar</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById("veloMenus").onclick = cerrarModal;
+  document.getElementById("btnCerrarMenus").onclick = cerrarModal;
+  document.getElementById("btnNuevoMenu").onclick = () => abrirEditorMenu(null);
+  document.getElementById("btnCuadro").onclick = abrirCuadro;
+  capa.querySelectorAll("[data-ver]").forEach(b => b.onclick = () => { cerrarModal(); previsualizarMenu(b.dataset.ver); });
+  capa.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => abrirEditorMenu(b.dataset.edit));
+  capa.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
+    if (!confirm("¿Eliminar este menú? Los platos del recetario no se borran.")) return;
+    menus = menus.filter(m => m.id !== b.dataset.del);
+    try { await guardarMenusStore(); notificar("Menú eliminado"); } catch { notificar("No se pudo eliminar."); }
+    abrirListaMenus();
+  });
+}
+
+async function abrirEditorMenu(id){
+  if (platos.length === 0){
+    notificar("Añade platos al recetario antes de crear un menú.");
+    return;
+  }
+  const m = id ? menus.find(x => x.id === id) : null;
+  let apartados = m
+    ? m.apartados.map(a => ({ titulo: a.titulo, platoIds: [...a.platoIds] }))
+    : [{ titulo: "Primeros", platoIds: [] }, { titulo: "Segundos", platoIds: [] }, { titulo: "Postres", platoIds: [] }];
+  let logo = (await stGet("config-logo")) || null;
+  let logoNuevo = null; /* dataURL o "BORRAR" */
+  const marcaGuardada = (await stGet("config-marca")) || "";
+  const PIE_HOTEL = "Nuestro establecimiento cuenta con información disponible en materia de alergias e intolerancias alimentarias. · Information on food allergies and intolerances is available in our establishment.";
+  const PIE_CLASICO = "Pan, bebida y café incluidos. Si tiene alguna alergia o intolerancia, consulte a nuestro personal.";
+
+  const capa = document.getElementById("capaModal");
+  capa.innerHTML = `<div class="velo">
+    <div class="modal ancho" onclick="event.stopPropagation()" style="padding:22px 24px 24px;">
+      <h2 class="display" style="font-size:22px;font-weight:700;margin:0;">${m ? "Editar menú" : "Nuevo menú"}</h2>
+      <div style="display:grid;gap:14px;margin-top:16px;">
+        <div>
+          <label class="campo-lbl" for="mPlantilla">Plantilla</label>
+          <select class="campo" id="mPlantilla">
+            <option value="clasica"${(m?.plantilla || "clasica") === "clasica" ? " selected" : ""}>Clásica (elegante, con iconos)</option>
+            <option value="hotel"${m?.plantilla === "hotel" ? " selected" : ""}>Hotel bilingüe (números de alérgenos + inglés)</option>
+          </select>
+        </div>
+        <div>
+          <label class="campo-lbl" for="mTitulo">Título del menú *</label>
+          <input class="campo" id="mTitulo" value="${esc(m?.titulo || "Menú del día")}" placeholder="Ej.: Menú del día">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label class="campo-lbl" for="mSubtitulo">Nombre del restaurante</label>
+            <input class="campo" id="mSubtitulo" value="${esc(m?.subtitulo || "")}" placeholder="Nombre del restaurante">
+          </div>
+          <div>
+            <label class="campo-lbl" for="mPrecio">Precio (línea 1)</label>
+            <input class="campo" id="mPrecio" value="${esc(m?.precio || "")}" placeholder="Ej.: Precio en Cafetería: 16,00 € (IVA incluido)">
+          </div>
+        </div>
+        <div id="zonaHotel" style="display:none;border:1px dashed var(--linea);border-radius:12px;padding:12px;">
+          <div style="display:grid;gap:12px;">
+            <div>
+              <label class="campo-lbl" for="mPrecio2">Precio (línea 2, opcional)</label>
+              <input class="campo" id="mPrecio2" value="${esc(m?.precio2 || "")}" placeholder="Ej.: Precio en Restaurante: 20,00 € (IVA incluido)">
+            </div>
+            <div>
+              <label class="campo-lbl" for="mNotaCentral">Nota central (español · inglés)</label>
+              <input class="campo" id="mNotaCentral" value="${esc(m?.notaCentral ?? "Postre, pan y una bebida · Dessert, bread and one drink")}">
+            </div>
+            <div>
+              <label class="campo-lbl" for="mMarca">Texto superior derecho (opcional)</label>
+              <input class="campo" id="mMarca" value="${esc(marcaGuardada)}" placeholder="Ej.: by Sercotel">
+            </div>
+            <label class="fila-check">
+              <input type="checkbox" id="mHojaTrasera" ${m?.hojaTrasera === false ? "" : "checked"}>
+              <span>Añadir hoja trasera con ingredientes y alérgenos de cada plato (para imprimir a doble cara)</span>
+            </label>
+            <div>
+              <label class="campo-lbl">Logotipo (opcional, se guarda para todos los menús)</label>
+              <div id="mZonaLogo"></div>
+              <input type="file" id="mFileLogo" accept="image/*" style="display:none;">
+            </div>
+            <div style="font-size:12px;color:var(--suave);">💡 Consejo: nombra los apartados en bilingüe, ej. «Primer Plato · First Course». La traducción de cada plato se toma de su campo «Nombre en inglés» (el escáner la rellena solo).</div>
+          </div>
+        </div>
+        <div>
+          <label class="campo-lbl" for="mFecha">Fecha o vigencia (vacío = fecha de hoy en la plantilla hotel)</label>
+          <input class="campo" id="mFecha" value="${esc(m?.fecha || "")}" placeholder="Ej.: Viernes, 10 de julio de 2026">
+        </div>
+        <div>
+          <label class="campo-lbl">Apartados y platos *</label>
+          <div id="mApartados" style="display:grid;gap:10px;"></div>
+          <button class="btn-linea" id="mAddApartado" style="margin-top:10px;">+ Añadir apartado</button>
+        </div>
+        <div>
+          <label class="campo-lbl" for="mPie">Nota a pie de página (opcional)</label>
+          <input class="campo" id="mPie" value="${esc(m?.pie ?? PIE_CLASICO)}">
+        </div>
+        <div id="mError" style="color:#B4483C;font-size:13px;font-weight:600;display:none;"></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+          <button class="btn-linea" id="mCancelar">Cancelar</button>
+          <button class="btn-verde" id="mGuardar">Guardar y ver</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  const $ = x => document.getElementById(x);
+
+  function pintarLogo(){
+    if (logo){
+      $("mZonaLogo").innerHTML = `<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <img src="${logo}" alt="Logo" style="max-height:50px;max-width:180px;object-fit:contain;border:1px solid var(--linea);border-radius:8px;padding:4px;background:#fff;">
+        <button class="btn-linea" id="mLogoCambiar" style="padding:6px 12px;">Cambiar</button>
+        <button class="btn-linea peligro" id="mLogoQuitar" style="padding:6px 12px;">Quitar</button>
+      </div>`;
+      $("mLogoCambiar").onclick = () => $("mFileLogo").click();
+      $("mLogoQuitar").onclick = () => { logo = null; logoNuevo = "BORRAR"; pintarLogo(); };
+    } else {
+      $("mZonaLogo").innerHTML = `<button class="btn-linea" id="mLogoSubir" style="padding:8px 14px;">🖼 Subir logotipo</button>`;
+      $("mLogoSubir").onclick = () => $("mFileLogo").click();
+    }
+  }
+  $("mFileLogo").onchange = async e => {
+    const file = e.target.files?.[0]; if (!file) return;
+    e.target.value = "";
+    try { const d = await comprimirImagen(file); logo = d; logoNuevo = d; pintarLogo(); }
+    catch { notificar("No se pudo procesar el logotipo."); }
+  };
+
+  function actualizarPlantilla(){
+    const esHotel = $("mPlantilla").value === "hotel";
+    $("zonaHotel").style.display = esHotel ? "block" : "none";
+    /* Si los textos siguen siendo los por defecto, cambiarlos al de la otra plantilla */
+    if (esHotel){
+      if ($("mTitulo").value === "Menú del día") $("mTitulo").value = "Menú Diario · Daily Menu";
+      if ($("mPie").value === PIE_CLASICO) $("mPie").value = PIE_HOTEL;
+      if (apartados.length === 3 && apartados[0].titulo === "Primeros" && apartados.every(a => a.platoIds.length === 0)){
+        apartados[0].titulo = "Primer Plato · First Course";
+        apartados[1].titulo = "Segundo Plato · Second Course";
+        apartados[2].titulo = "Postre · Dessert";
+        pintarApartados();
+      }
+    } else {
+      if ($("mTitulo").value === "Menú Diario · Daily Menu") $("mTitulo").value = "Menú del día";
+      if ($("mPie").value === PIE_HOTEL) $("mPie").value = PIE_CLASICO;
+    }
+  }
+  $("mPlantilla").onchange = actualizarPlantilla;
+
+  function pintarApartados(){
+    $("mApartados").innerHTML = apartados.map((a, i) => {
+      const seleccionados = a.platoIds.map(pid => platos.find(p => p.id === pid)).filter(Boolean);
+      const grupos = SECCIONES.map(s => {
+        const opciones = s.sub.map(sub => {
+          const dePlatos = platos.filter(p => p.subseccion === sub.id);
+          if (dePlatos.length === 0) return "";
+          return `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--suave);margin:8px 0 2px;">${esc(s.nombre)} · ${esc(sub.nombre)}</div>` +
+            dePlatos.map(p => `<label class="fila-check">
+              <input type="checkbox" data-ap="${i}" data-plato="${p.id}" ${a.platoIds.includes(p.id) ? "checked" : ""}>
+              <span>${esc(p.nombre)}</span>
+              <span style="margin-left:auto;font-size:12px;">${p.alergenos.map(al => AL_MAP[al]?.icono || "").join(" ")}</span>
+            </label>`).join("");
+        }).join("");
+        return opciones;
+      }).join("");
+      return `<div class="apartado-menu">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input class="campo" data-titulo-ap="${i}" value="${esc(a.titulo)}" placeholder="Título del apartado" style="flex:1;">
+          <button class="btn-linea peligro" data-borrar-ap="${i}" style="padding:8px 12px;" title="Quitar apartado">✕</button>
+        </div>
+        <details class="selector-platos" style="margin-top:8px;">
+          <summary>${seleccionados.length === 0 ? "Elegir platos…" : seleccionados.length + " plato(s): " + esc(seleccionados.map(p => p.nombre).join(", "))}</summary>
+          <div class="cuerpo">${grupos || '<div style="font-size:13px;color:var(--suave);padding:8px 0;">No hay platos en el recetario.</div>'}</div>
+        </details>
+      </div>`;
+    }).join("");
+
+    $("mApartados").querySelectorAll("[data-titulo-ap]").forEach(inp =>
+      inp.oninput = () => { apartados[Number(inp.dataset.tituloAp)].titulo = inp.value; });
+    $("mApartados").querySelectorAll("[data-borrar-ap]").forEach(b =>
+      b.onclick = () => { apartados.splice(Number(b.dataset.borrarAp), 1); pintarApartados(); });
+    $("mApartados").querySelectorAll("input[type=checkbox]").forEach(ch =>
+      ch.onchange = () => {
+        const ap = apartados[Number(ch.dataset.ap)];
+        if (ch.checked) ap.platoIds.push(ch.dataset.plato);
+        else ap.platoIds = ap.platoIds.filter(x => x !== ch.dataset.plato);
+        const det = ch.closest("details");
+        const abierto = det?.open;
+        pintarApartados();
+        if (abierto){
+          const nuevoDet = $("mApartados").querySelectorAll("details")[Number(ch.dataset.ap)];
+          if (nuevoDet) nuevoDet.open = true;
+        }
+      });
+  }
+
+  $("mAddApartado").onclick = () => { apartados.push({ titulo: "", platoIds: [] }); pintarApartados(); };
+  $("mCancelar").onclick = () => abrirListaMenus();
+
+  $("mGuardar").onclick = async () => {
+    const titulo = $("mTitulo").value.trim();
+    const conPlatos = apartados.filter(a => a.platoIds.length > 0);
+    const err = $("mError");
+    if (!titulo){ err.textContent = "El menú necesita un título."; err.style.display = "block"; return; }
+    if (conPlatos.length === 0){ err.textContent = "Elige al menos un plato en algún apartado."; err.style.display = "block"; return; }
+    err.style.display = "none";
+    const obj = {
+      id: m?.id || "m" + Date.now(),
+      titulo,
+      plantilla: $("mPlantilla").value,
+      subtitulo: $("mSubtitulo").value.trim(),
+      precio: $("mPrecio").value.trim(),
+      precio2: $("mPrecio2").value.trim(),
+      notaCentral: $("mNotaCentral").value.trim(),
+      hojaTrasera: $("mHojaTrasera").checked,
+      fecha: $("mFecha").value.trim(),
+      pie: $("mPie").value.trim(),
+      apartados: apartados.filter(a => a.titulo.trim() || a.platoIds.length > 0)
+        .map(a => ({ titulo: a.titulo.trim() || "Platos", platoIds: a.platoIds })),
+    };
+    try {
+      try {
+        await stSet("config-marca", $("mMarca").value.trim());
+        if (logoNuevo && logoNuevo !== "BORRAR") await stSet("config-logo", logoNuevo);
+        else if (logoNuevo === "BORRAR") await stDel("config-logo");
+      } catch(e){}
+      const existe = menus.some(x => x.id === obj.id);
+      menus = existe ? menus.map(x => x.id === obj.id ? obj : x) : [...menus, obj];
+      await guardarMenusStore();
+      cerrarModal();
+      previsualizarMenu(obj.id);
+      notificar("Menú guardado");
+    } catch {
+      err.textContent = "No se pudo guardar el menú. Inténtalo de nuevo.";
+      err.style.display = "block";
+    }
+  };
+
+  pintarApartados();
+  pintarLogo();
+  actualizarPlantilla();
+}
+
+/* ── Vista previa e impresión ── */
+async function previsualizarMenu(id){
+  const m = menus.find(x => x.id === id); if (!m) return;
+
+  const capa = document.getElementById("capaImpresion");
+  const barra = `
+    <div class="barra-impresion">
+      <button class="btn-linea" id="impVolver" style="background:#fff;">← Volver</button>
+      <button class="btn-linea" id="impEditar" style="background:#fff;">Editar menú</button>
+      <button class="btn-verde" id="impImprimir">🖨 Imprimir / Guardar PDF</button>
+    </div>`;
+
+  if (m.plantilla === "hotel"){
+    /* ── Plantilla hotel bilingüe ── */
+    const logo = (await stGet("config-logo")) || null;
+    const marca = (await stGet("config-marca")) || "";
+    const bloques = m.apartados.map(a => {
+      const lineas = a.platoIds.map(pid => {
+        const p = platos.find(x => x.id === pid);
+        if (!p) return "";
+        const nums = numerosAlergenos(p);
+        return `<div class="ph">
+          <div class="ph-nombre">${esc(p.nombre)}${nums ? `<sup>${nums}</sup>` : ""}</div>
+          ${p.nombreEn ? `<div class="ph-en">${esc(p.nombreEn)}</div>` : (p.descripcion ? `<div class="ph-en">${esc(p.descripcion)}</div>` : "")}
+        </div>`;
+      }).join("");
+      if (!lineas) return "";
+      return `<h2 class="hh-seccion">${esc(a.titulo)}</h2>${lineas}`;
+    }).join("");
+
+    const notaPartes = (m.notaCentral || "").split("·").map(s => s.trim()).filter(Boolean);
+    const nota = notaPartes.length
+      ? `<div class="hh-nota">${esc(notaPartes[0])}${notaPartes[1] ? `<span class="en">${esc(notaPartes.slice(1).join(" · "))}</span>` : ""}</div>`
+      : "";
+    const piePartes = (m.pie || "").split("·").map(s => s.trim()).filter(Boolean);
+    const pie = piePartes.length
+      ? `<div class="hh-pie">${piePartes.map(t => esc(t)).join("<br>")}</div>`
+      : "";
+
+    /* Hoja trasera: detalle de ingredientes y alérgenos por plato */
+    let hojaTrasera = "";
+    if (m.hojaTrasera !== false){
+      const bloquesTras = m.apartados.map(a => {
+        const lineas = a.platoIds.map(pid => {
+          const p = platos.find(x => x.id === pid);
+          if (!p) return "";
+          const nums = numerosAlergenos(p);
+          return `<div class="pt">
+            <div class="pt-nombre">${esc(p.nombre)}</div>
+            <div class="pt-linea"><b>Ingredientes:</b> ${esc(p.ingredientes.join(", "))}</div>
+            <div class="pt-linea"><b>Alérgenos:</b> ${nums || "—"}</div>
+          </div>`;
+        }).join("");
+        if (!lineas) return "";
+        return `<h2 class="hh-tras">${esc(a.titulo.split("·")[0].trim())}</h2>${lineas}`;
+      }).join("");
+      hojaTrasera = `
+      <div class="hoja hoja-hotel hoja-salto">
+        <div class="hh-top">
+          <div>${logo ? `<img class="hh-logo" src="${logo}" alt="Logo">` : `<div class="hh-nombre-resto">${esc(m.subtitulo || "")}</div>`}</div>
+          <div class="hh-marca">${esc(marca)}</div>
+        </div>
+        ${bloquesTras}
+        ${leyendaHotel()}
+      </div>`;
+    }
+
+    capa.innerHTML = barra + `
+    <div class="hoja hoja-hotel">
+      <div class="hh-top">
+        <div>${logo ? `<img class="hh-logo" src="${logo}" alt="Logo">` : `<div class="hh-nombre-resto">${esc(m.subtitulo || "")}</div>`}</div>
+        <div class="hh-marca">${esc(marca)}</div>
+      </div>
+      <div class="hh-linea-titulo">
+        <div class="hh-titulo">${esc(m.titulo)}</div>
+        <div class="hh-fecha">${esc(m.fecha || fechaHoyLarga())}</div>
+      </div>
+      ${bloques}
+      ${nota}
+      <div class="hh-precios">
+        ${m.precio ? `<div>${esc(m.precio)}</div>` : ""}
+        ${m.precio2 ? `<div>${esc(m.precio2)}</div>` : ""}
+      </div>
+      ${leyendaHotel()}
+      ${pie}
+    </div>` + hojaTrasera;
+  } else {
+    /* ── Plantilla clásica ── */
+    const usados = new Set();
+    const bloques = m.apartados.map(a => {
+      const lineas = a.platoIds.map(pid => {
+        const p = platos.find(x => x.id === pid);
+        if (!p) return "";
+        p.alergenos.forEach(al => usados.add(al));
+        const iconos = p.alergenos.map(al => AL_MAP[al]?.icono || "").join(" ");
+        return `<div class="plato-linea">
+          <div>
+            <div class="plato-nombre">${esc(p.nombre)}</div>
+            ${p.descripcion ? `<div class="plato-desc">${esc(p.descripcion)}</div>` : ""}
+          </div>
+          <div class="plato-al">${iconos}</div>
+        </div>`;
+      }).join("");
+      if (!lineas) return "";
+      return `<h2>${esc(a.titulo)}</h2>${lineas}`;
+    }).join("");
+
+    const leyenda = [...usados].map(al => {
+      const a = AL_MAP[al]; if (!a) return "";
+      return `<div>${a.icono} ${esc(a.nombre)}</div>`;
+    }).join("");
+
+    capa.innerHTML = barra + `
+    <div class="hoja">
+      <div class="cab">
+        ${m.subtitulo ? `<div class="resto">${esc(m.subtitulo)}</div>` : ""}
+        <h1>${esc(m.titulo)}</h1>
+        ${m.fecha ? `<div class="fecha">${esc(m.fecha)}</div>` : ""}
+        ${m.precio ? `<div class="precio">${esc(m.precio)}</div>` : ""}
+      </div>
+      ${bloques}
+      ${leyenda ? `<div class="leyenda">
+        <div class="leyenda-titulo">Alérgenos de declaración obligatoria (Reglamento UE 1169/2011)</div>
+        <div class="leyenda-items">${leyenda}</div>
+      </div>` : ""}
+      ${m.pie ? `<div class="pie">${esc(m.pie)}</div>` : ""}
+    </div>`;
+  }
+
+  fijarOrientacion(false);
+  document.body.classList.add("previsualizando");
+  document.getElementById("impVolver").onclick = cerrarPrevisualizacion;
+  document.getElementById("impEditar").onclick = () => { cerrarPrevisualizacion(); abrirEditorMenu(id); };
+  document.getElementById("impImprimir").onclick = () => imprimir(m.titulo || "menu");
+}
+function cerrarPrevisualizacion(){
+  document.body.classList.remove("previsualizando");
+  document.getElementById("capaImpresion").innerHTML = "";
+}
+
+/* Orientación del papel al imprimir (vertical para menús, horizontal para el cuadro) */
+function fijarOrientacion(apaisado){
+  let st = document.getElementById("estiloPagina");
+  if (!st){ st = document.createElement("style"); st.id = "estiloPagina"; document.head.appendChild(st); }
+  st.textContent = "@media print{@page{size:A4 " + (apaisado ? "landscape" : "portrait") + ";margin:10mm;}}";
+}
+
+/* Impresión: en la app Android usa el diálogo nativo (plugin);
+   en un navegador normal usa window.print() */
+async function imprimir(nombreArchivo){
+  const wp = window.Capacitor?.Plugins?.WebviewPrint;
+  if (wp){
+    try { await wp.print({ name: nombreArchivo }); return; }
+    catch(e){ /* si el plugin falla, probamos el método clásico */ }
+  }
+  window.print();
+}
+
+/* ══════════════════════════════════════════════════════════
+   CUADRO OFICIAL DE ALÉRGENOS (tabla platos × 14 alérgenos)
+   ══════════════════════════════════════════════════════════ */
+async function abrirCuadro(){
+  if (platos.length === 0){ notificar("Añade platos al recetario antes de generar el cuadro."); return; }
+  const nombreGuardado = (await stGet("config-nombre")) || "";
+  const capa = document.getElementById("capaModal");
+  capa.innerHTML = `<div class="velo" id="veloCuadro">
+    <div class="modal" onclick="event.stopPropagation()" style="padding:22px 24px 24px;">
+      <h2 class="display" style="font-size:22px;font-weight:700;margin:0;">Cuadro oficial de alérgenos</h2>
+      <p style="font-size:13px;color:var(--suave);margin:8px 0 14px;">
+        Genera la tabla de platos × 14 alérgenos (Reglamento UE 1169/2011) para tener en el establecimiento.
+        Se imprime en horizontal.</p>
+      <div style="display:grid;gap:14px;">
+        <div>
+          <label class="campo-lbl" for="cNombre">Nombre del restaurante (aparece en la cabecera)</label>
+          <input class="campo" id="cNombre" value="${esc(nombreGuardado)}" placeholder="Ej.: Restaurante La Plaza">
+        </div>
+        <div>
+          <label class="campo-lbl">Secciones a incluir</label>
+          <div id="cSecciones" style="display:grid;gap:4px;">
+            ${SECCIONES.map(s => `<label class="fila-check">
+              <input type="checkbox" value="${s.id}" checked> <span>${s.icono} ${esc(s.nombre)}</span>
+            </label>`).join("")}
+          </div>
+        </div>
+        <div id="cError" style="color:#B4483C;font-size:13px;font-weight:600;display:none;"></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button class="btn-linea" id="cCancelar">Volver</button>
+          <button class="btn-verde" id="cVer">Ver cuadro</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById("veloCuadro").onclick = cerrarModal;
+  document.getElementById("cCancelar").onclick = abrirListaMenus;
+  document.getElementById("cVer").onclick = async () => {
+    const nombre = document.getElementById("cNombre").value.trim();
+    const secs = [...document.querySelectorAll("#cSecciones input:checked")].map(ch => ch.value);
+    const err = document.getElementById("cError");
+    if (secs.length === 0){ err.textContent = "Elige al menos una sección."; err.style.display = "block"; return; }
+    const hayPlatos = platos.some(p => secs.includes(SUB_A_PRINCIPAL[p.subseccion]?.id));
+    if (!hayPlatos){ err.textContent = "No hay platos en las secciones elegidas."; err.style.display = "block"; return; }
+    try { await stSet("config-nombre", nombre); } catch(e){}
+    cerrarModal();
+    previsualizarCuadro(nombre, secs);
+  };
+}
+
+function previsualizarCuadro(nombre, seccionesSel){
+  const cabecera = `<tr>
+    <th style="text-align:left;font-size:12px;">Plato</th>
+    ${ALERGENOS.map(a => `<th class="col-al" title="${esc(a.nombre)}">
+      <span class="vert">${esc(a.nombre)}</span><span class="icono-al">${a.icono}</span>
+    </th>`).join("")}
+  </tr>`;
+
+  let filas = "";
+  SECCIONES.filter(s => seccionesSel.includes(s.id)).forEach(s => {
+    const platosSeccion = platos.filter(p => SUB_A_PRINCIPAL[p.subseccion]?.id === s.id);
+    if (platosSeccion.length === 0) return;
+    filas += `<tr class="fila-seccion"><td colspan="15">${esc(s.nombre)}</td></tr>`;
+    s.sub.forEach(sub => {
+      const dePlatos = platosSeccion.filter(p => p.subseccion === sub.id);
+      if (dePlatos.length === 0) return;
+      filas += `<tr class="fila-sub"><td colspan="15">${esc(sub.nombre)}</td></tr>`;
+      dePlatos.forEach(p => {
+        filas += `<tr>
+          <td class="nombre-plato">${esc(p.nombre)}</td>
+          ${ALERGENOS.map(a => `<td class="celda">${p.alergenos.includes(a.id) ? "●" : ""}</td>`).join("")}
+        </tr>`;
+      });
+    });
+  });
+
+  const hoy = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
+  const capa = document.getElementById("capaImpresion");
+  capa.innerHTML = `
+    <div class="barra-impresion" style="max-width:1050px;">
+      <button class="btn-linea" id="impVolver" style="background:#fff;">← Volver</button>
+      <button class="btn-verde" id="impImprimir">🖨 Imprimir / Guardar PDF</button>
+    </div>
+    <div class="hoja hoja-cuadro">
+      <div class="cab">
+        ${nombre ? `<div class="resto">${esc(nombre)}</div>` : ""}
+        <h1 style="font-size:30px;">Cuadro de alérgenos</h1>
+        <div class="fecha">Actualizado a ${esc(hoy)} · Reglamento (UE) n.º 1169/2011</div>
+      </div>
+      <table class="tabla-al">
+        <thead>${cabecera}</thead>
+        <tbody>${filas}</tbody>
+      </table>
+      <div class="leyenda">
+        <div class="leyenda-titulo">Cómo leer este cuadro</div>
+        <div style="font-size:11.5px;color:#20291F;">● &nbsp;El plato contiene el alérgeno indicado en la columna.</div>
+      </div>
+      <div class="pie">Documento informativo elaborado por el establecimiento. Ante cualquier duda sobre alergias o intolerancias, consulte a nuestro personal.</div>
+    </div>`;
+  fijarOrientacion(true);
+  document.body.classList.add("previsualizando");
+  document.getElementById("impVolver").onclick = cerrarPrevisualizacion;
+  document.getElementById("impImprimir").onclick = () => imprimir(document.querySelector(".hoja h1")?.textContent?.trim() || "documento");
+}
+
+/* ══════════════════════════════════════════════════════════
+   AÑADIR PLATOS DESDE FOTOGRAFÍA (Gemini)
+   ══════════════════════════════════════════════════════════ */
+async function llamarGemini(base64, prompt, mime){
+  /* Prueba el modelo configurado y, si Google lo ha retirado, los de respaldo */
+  const modelos = [...new Set([GEMINI_MODELO, ...GEMINI_RESPALDO])];
+  let ultimoError = "sin conexión";
+  for (const modelo of modelos){
+    try {
+      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [
+            { inline_data: { mime_type: mime || "image/jpeg", data: base64 } },
+            { text: prompt }
+          ]}]
+        })
+      });
+      if (resp.ok) return await resp.json();
+      const err = await resp.json().catch(() => ({}));
+      ultimoError = err?.error?.message || ("HTTP " + resp.status);
+      /* Si el modelo no existe o fue retirado, probar el siguiente; otros errores (clave inválida, cuota) no se reintentan */
+      const msg = ultimoError.toLowerCase();
+      if (!(resp.status === 404 || msg.includes("no longer available") || msg.includes("not found") || msg.includes("deprecated"))) break;
+    } catch(e){
+      ultimoError = e.message || "error de red";
+      break;
+    }
+  }
+  throw new Error(ultimoError);
+}
+
+function archivoABase64(file){
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = e => resolve(String(e.target.result).split(",")[1]);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+async function escanearImagen(file){
+  const capa = document.getElementById("capaModal");
+  capa.innerHTML = `<div class="velo">
+    <div class="modal" style="padding:30px 24px;text-align:center;">
+      <div style="font-size:36px;">📷</div>
+      <div class="display" style="font-size:20px;font-weight:600;margin-top:8px;">Leyendo el documento…</div>
+      <div style="font-size:13px;color:var(--suave);margin-top:6px;">Detectando platos, secciones e ingredientes. Suele tardar unos segundos.</div>
+    </div>
+  </div>`;
+  try {
+    const esPdf = file.type === "application/pdf";
+    let base64, mime;
+    if (esPdf){ base64 = await archivoABase64(file); mime = "application/pdf"; }
+    else { const dataUrl = await comprimirImagen(file); base64 = dataUrl.split(",")[1]; mime = "image/jpeg"; }
+
+    const listaSecciones = SECCIONES.map(s => s.sub.map(sub => `"${sub.id}" = ${s.nombre} / ${sub.nombre}`).join("; ")).join("; ");
+    const prompt = `Analiza este documento de un restaurante español (carta, menú del día, ficha de cocina, pizarra o lista manuscrita).
+Extrae TODOS los platos que aparezcan. Para cada plato:
+- "nombre": el nombre del plato tal como aparece.
+- "nombre_en": traducción breve y natural del nombre del plato al inglés (si el documento ya la incluye, usa esa).
+- "descripcion": breve, solo si el documento la incluye; si no, "".
+- "seccion": clasifícalo según el apartado del documento donde aparece (por ejemplo bajo el título "Primeros" o "Segundos") o dedúcelo por el tipo de plato. Usa EXACTAMENTE uno de estos identificadores: ${listaSecciones}.
+- "ingredientes": los ingredientes escritos en el documento; si no aparecen, dedúcelos de forma razonable por el nombre del plato (sin cantidades, en minúsculas).
+Responde SOLO con un array JSON válido, sin texto adicional ni marcas de código:
+[{"nombre":"...","nombre_en":"...","descripcion":"","seccion":"primeros","ingredientes":["...","..."]}]
+Si no hay platos legibles, responde [].`;
+
+    const resp = await llamarGemini(base64, prompt, mime);
+    let texto = (resp?.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("");
+    texto = texto.replace(/```json|```/g, "").trim();
+    const inicio = texto.indexOf("["), fin = texto.lastIndexOf("]");
+    if (inicio === -1 || fin === -1) throw new Error("respuesta sin JSON");
+    const detectados = JSON.parse(texto.slice(inicio, fin + 1));
+    if (!Array.isArray(detectados) || detectados.length === 0){
+      cerrarModal();
+      notificar("No se han detectado platos. Prueba con una imagen más nítida.");
+      return;
+    }
+    abrirRevisionEscaneo(detectados.map(d => {
+      const ings = Array.isArray(d.ingredientes) ? d.ingredientes.map(i => String(i).trim()).filter(Boolean) : [];
+      return {
+        incluir: true,
+        nombre: String(d.nombre || "").trim(),
+        nombreEn: String(d.nombre_en || "").trim(),
+        descripcion: String(d.descripcion || "").trim(),
+        ingredientes: ings,
+        subseccion: NOMBRE_SUB[d.seccion] ? d.seccion : "primeros",
+        alergenos: sugerirAlergenos(ings),
+        foto: null,
+      };
+    }).filter(d => d.nombre));
+  } catch(e){
+    cerrarModal();
+    notificar("No se pudo leer el documento: " + (e.message || "error de conexión"));
+  }
+}
+
+function abrirRevisionEscaneo(items){
+  const capa = document.getElementById("capaModal");
+  const opcionesSeccion = SECCIONES.map(s => `<optgroup label="${esc(s.nombre)}">
+    ${s.sub.map(sub => `<option value="${sub.id}">${esc(sub.nombre)}</option>`).join("")}
+  </optgroup>`).join("");
+  let fotoIndice = null; /* a qué plato va la próxima foto */
+
+  capa.innerHTML = `<div class="velo">
+    <div class="modal ancho" onclick="event.stopPropagation()" style="padding:22px 24px 24px;">
+      <h2 class="display" style="font-size:22px;font-weight:700;margin:0;">Revisar platos detectados (${items.length})</h2>
+      <p style="font-size:13px;color:var(--suave);margin:8px 0 4px;">
+        Corrige lo que haga falta: nombre, sección, ingredientes, <strong>alérgenos</strong> (vienen premarcados según los ingredientes — confírmalos tú) y foto del plato si procede. Desmarca los que no quieras añadir.</p>
+      <div id="revLista" style="display:grid;gap:12px;margin-top:12px;"></div>
+      <div id="revError" style="color:#B4483C;font-size:13px;font-weight:600;display:none;margin-top:10px;"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+        <button class="btn-linea" id="revCancelar">Cancelar</button>
+        <button class="btn-verde" id="revAnadir">Añadir seleccionados</button>
+      </div>
+      <input type="file" id="revFotoGal" accept="image/*" style="display:none;">
+      <input type="file" id="revFotoCam" accept="image/*" capture="environment" style="display:none;">
+    </div>
+  </div>`;
+
+  function pintar(){
+    document.getElementById("revLista").innerHTML = items.map((it, i) => `
+      <div class="apartado-menu" style="opacity:${it.incluir ? 1 : .45};">
+        <label class="fila-check" style="font-weight:600;">
+          <input type="checkbox" data-inc="${i}" ${it.incluir ? "checked" : ""}> <span>Añadir este plato</span>
+        </label>
+        <div style="display:grid;gap:8px;margin-top:6px;">
+          <input class="campo" data-nom="${i}" value="${esc(it.nombre)}" placeholder="Nombre del plato">
+          <select class="campo" data-sec="${i}">${opcionesSeccion}</select>
+          <textarea class="campo" data-ing="${i}" rows="2" placeholder="Ingredientes separados por comas">${esc(it.ingredientes.join(", "))}</textarea>
+          <div>
+            <div style="font-size:12px;font-weight:600;margin-bottom:4px;">Alérgenos:</div>
+            <div class="grupo-chips">
+              ${ALERGENOS.map(a => `<button class="btn-alergeno${it.alergenos.includes(a.id) ? " activo" : ""}" data-al="${i}:${a.id}" style="padding:3px 9px;font-size:12px;">${a.icono} ${esc(a.nombre)}</button>`).join("")}
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            ${it.foto ? `<img src="${it.foto}" alt="" style="width:72px;height:54px;object-fit:cover;border-radius:8px;border:1px solid var(--linea);">` : ""}
+            <button class="btn-linea" data-cam="${i}" style="padding:6px 12px;font-size:13px;">📷 Foto</button>
+            <button class="btn-linea" data-gal="${i}" style="padding:6px 12px;font-size:13px;">🖼 Galería</button>
+            ${it.foto ? `<button class="btn-linea peligro" data-sinfoto="${i}" style="padding:6px 12px;font-size:13px;">✕</button>` : ""}
+          </div>
+        </div>
+      </div>`).join("");
+
+    items.forEach((it, i) => {
+      const sel = document.querySelector(`[data-sec="${i}"]`);
+      if (sel) sel.value = it.subseccion;
+    });
+    document.querySelectorAll("[data-inc]").forEach(ch => ch.onchange = () => {
+      items[Number(ch.dataset.inc)].incluir = ch.checked; pintar();
+    });
+    document.querySelectorAll("[data-nom]").forEach(inp => inp.oninput = () => {
+      items[Number(inp.dataset.nom)].nombre = inp.value;
+    });
+    document.querySelectorAll("[data-sec]").forEach(sel => sel.onchange = () => {
+      items[Number(sel.dataset.sec)].subseccion = sel.value;
+    });
+    document.querySelectorAll("[data-ing]").forEach(ta => ta.onchange = () => {
+      const i = Number(ta.dataset.ing);
+      items[i].ingredientes = ta.value.split(/[,;\n]/).map(s => s.trim()).filter(Boolean);
+      /* añade a lo marcado las sugerencias nuevas de los ingredientes editados */
+      sugerirAlergenos(items[i].ingredientes).forEach(a => {
+        if (!items[i].alergenos.includes(a)) items[i].alergenos.push(a);
+      });
+      pintar();
+    });
+    document.querySelectorAll("[data-al]").forEach(b => b.onclick = () => {
+      const [i, al] = b.dataset.al.split(":");
+      const it = items[Number(i)];
+      it.alergenos = it.alergenos.includes(al) ? it.alergenos.filter(x => x !== al) : [...it.alergenos, al];
+      pintar();
+    });
+    document.querySelectorAll("[data-cam]").forEach(b => b.onclick = () => {
+      fotoIndice = Number(b.dataset.cam); document.getElementById("revFotoCam").click();
+    });
+    document.querySelectorAll("[data-gal]").forEach(b => b.onclick = () => {
+      fotoIndice = Number(b.dataset.gal); document.getElementById("revFotoGal").click();
+    });
+    document.querySelectorAll("[data-sinfoto]").forEach(b => b.onclick = () => {
+      items[Number(b.dataset.sinfoto)].foto = null; pintar();
+    });
+  }
+
+  const manejarFotoRev = async e => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || fotoIndice === null) return;
+    try {
+      items[fotoIndice].foto = await comprimirImagen(file);
+      pintar();
+    } catch { notificar("No se pudo procesar la imagen."); }
+  };
+  document.getElementById("revFotoGal").onchange = manejarFotoRev;
+  document.getElementById("revFotoCam").onchange = manejarFotoRev;
+
+  document.getElementById("revCancelar").onclick = cerrarModal;
+  document.getElementById("revAnadir").onclick = async () => {
+    const elegidos = items.filter(it => it.incluir && it.nombre.trim() && it.ingredientes.length > 0);
+    const err = document.getElementById("revError");
+    if (elegidos.length === 0){
+      err.textContent = "Marca al menos un plato con nombre e ingredientes.";
+      err.style.display = "block";
+      return;
+    }
+    err.style.display = "none";
+    const base = Date.now();
+    const nuevos = [];
+    elegidos.forEach((it, i) => {
+      const p = {
+        id: "p" + (base + i),
+        nombre: it.nombre.trim(),
+        nombreEn: it.nombreEn || "",
+        subseccion: it.subseccion,
+        descripcion: it.descripcion,
+        ingredientes: it.ingredientes,
+        alergenos: it.alergenos,
+        tieneFoto: !!it.foto,
+      };
+      platos.push(p);
+      if (it.foto) nuevos.push({ id: p.id, foto: it.foto });
+    });
+    try {
+      await guardarPlatosStore();
+      for (const n of nuevos){
+        fotos[n.id] = n.foto;
+        await guardarFotoStore(n.id, n.foto);
+      }
+      cerrarModal(); render();
+      notificar(elegidos.length + " plato(s) añadidos al recetario");
+    } catch {
+      err.textContent = "No se pudo guardar. Inténtalo de nuevo.";
+      err.style.display = "block";
+    }
+  };
+
+  pintar();
+}
+
+/* ══════════════════════════════════════════════════════════
+   COPIA DE SEGURIDAD (exportar / importar)
+   ══════════════════════════════════════════════════════════ */
+function abrirCopia(){
+  const capa = document.getElementById("capaModal");
+  capa.innerHTML = `<div class="velo" id="veloCopia">
+    <div class="modal" onclick="event.stopPropagation()" style="padding:22px 24px 24px;">
+      <h2 class="display" style="font-size:22px;font-weight:700;margin:0;">Copia de seguridad</h2>
+      <p style="font-size:14px;color:var(--suave);margin:10px 0 16px;">
+        Exporta todo el recetario (platos, fotos y menús) a un archivo, o restaura una copia hecha en otro dispositivo.
+        Al importar se sustituyen los datos actuales.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn-verde" id="btnExportar">⤓ Exportar recetario</button>
+        <button class="btn-linea" id="btnImportar">⤒ Importar copia</button>
+        <input type="file" id="fileImportar" accept=".json,application/json" style="display:none;">
+      </div>
+      <div id="copiaEstado" style="font-size:13px;margin-top:12px;color:var(--suave);"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+        <button class="btn-linea" id="btnCerrarCopia">Cerrar</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById("veloCopia").onclick = cerrarModal;
+  document.getElementById("btnCerrarCopia").onclick = cerrarModal;
+
+  document.getElementById("btnExportar").onclick = async () => {
+    const estado = document.getElementById("copiaEstado");
+    estado.textContent = "Preparando copia…";
+    try {
+      const fotosExp = {};
+      for (const p of platos){
+        if (p.tieneFoto){
+          const f = fotos[p.id] || await stGet("foto:" + p.id);
+          if (f) fotosExp[p.id] = f;
+        }
+      }
+      const datos = JSON.stringify({ version: 1, fecha: new Date().toISOString(), platos, menus, fotos: fotosExp });
+      const blob = new Blob([datos], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "recetario-" + new Date().toISOString().slice(0,10) + ".json";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      estado.textContent = "Copia exportada. Guárdala en un lugar seguro (Drive, correo, etc.).";
+    } catch {
+      estado.textContent = "No se pudo exportar la copia.";
+    }
+  };
+
+  document.getElementById("btnImportar").onclick = () => document.getElementById("fileImportar").click();
+  document.getElementById("fileImportar").onchange = async e => {
+    const file = e.target.files?.[0]; if (!file) return;
+    const estado = document.getElementById("copiaEstado");
+    if (!confirm("Esto sustituirá el recetario actual por el de la copia. ¿Continuar?")) return;
+    estado.textContent = "Importando…";
+    try {
+      const texto = await file.text();
+      const datos = JSON.parse(texto);
+      if (!Array.isArray(datos.platos)) throw new Error("formato");
+      platos = datos.platos;
+      menus = Array.isArray(datos.menus) ? datos.menus : [];
+      fotos = {};
+      await guardarPlatosStore();
+      await guardarMenusStore();
+      for (const [id, f] of Object.entries(datos.fotos || {})){
+        await guardarFotoStore(id, f);
+        fotos[id] = f;
+      }
+      render();
+      estado.textContent = "Copia restaurada: " + platos.length + " platos y " + menus.length + " menús.";
+      notificar("Recetario restaurado");
+    } catch {
+      estado.textContent = "El archivo no es una copia válida del recetario.";
+    }
+  };
+}
+
+/* ── Controles superiores ── */
+document.getElementById("btnCopia").onclick = abrirCopia;
+document.getElementById("btnModo").onclick = () => {
+  modo = modo === "consulta" ? "edicion" : "consulta";
+  const b = document.getElementById("btnModo");
+  b.textContent = modo === "consulta" ? "✎ Modo edición" : "👁 Modo consulta";
+  b.style.background = modo === "edicion" ? "rgba(255,255,255,.18)" : "transparent";
+  document.getElementById("btnNuevo").style.display = modo === "edicion" ? "inline-block" : "none";
+  document.getElementById("btnEscanear").style.display = (modo === "edicion" && GEMINI_API_KEY) ? "inline-block" : "none";
+  render();
+};
+document.getElementById("btnNuevo").onclick = () => {
+  if (!GEMINI_API_KEY){ abrirFormulario(null); return; }
+  const capa = document.getElementById("capaModal");
+  capa.innerHTML = `<div class="velo" id="veloNuevo">
+    <div class="modal" onclick="event.stopPropagation()" style="padding:22px 24px 24px;">
+      <h2 class="display" style="font-size:20px;font-weight:700;margin:0 0 6px;">Añadir plato</h2>
+      <p style="font-size:13px;color:var(--suave);margin:0 0 14px;">¿Cómo quieres añadirlo?</p>
+      <div style="display:grid;gap:10px;">
+        <button class="btn-verde" id="nuevoMano" style="padding:14px;">✍️ Crear a mano</button>
+        <button class="btn-verde" id="nuevoCam" style="padding:14px;">📷 Fotografiar carta o menú</button>
+        <button class="btn-linea" id="nuevoDoc" style="padding:13px;">🖼 Desde imagen o PDF de la galería</button>
+        <button class="btn-linea" id="nuevoCancelar" style="border-color:var(--linea);color:var(--suave);">Cancelar</button>
+      </div>
+      <p style="font-size:12px;color:var(--suave);margin:12px 0 0;">Con foto o documento se detectan todos los platos que aparezcan (un menú entero de una vez) y los revisas antes de guardar.</p>
+    </div>
+  </div>`;
+  document.getElementById("veloNuevo").onclick = cerrarModal;
+  document.getElementById("nuevoCancelar").onclick = cerrarModal;
+  document.getElementById("nuevoMano").onclick = () => { cerrarModal(); abrirFormulario(null); };
+  document.getElementById("nuevoCam").onclick = () => document.getElementById("fileEscanearCam").click();
+  document.getElementById("nuevoDoc").onclick = () => document.getElementById("fileEscanear").click();
+};
+document.getElementById("btnEscanear").onclick = () => {
+  const capa = document.getElementById("capaModal");
+  capa.innerHTML = `<div class="velo" id="veloEsc">
+    <div class="modal" onclick="event.stopPropagation()" style="padding:22px 24px 24px;">
+      <h2 class="display" style="font-size:20px;font-weight:700;margin:0 0 6px;">Añadir platos desde foto</h2>
+      <p style="font-size:13px;color:var(--suave);margin:0 0 14px;">Fotografía una carta, ficha o pizarra, o elige una imagen que ya tengas.</p>
+      <div style="display:grid;gap:10px;">
+        <button class="btn-verde" id="escCamara" style="padding:14px;">📷 Hacer foto con la cámara</button>
+        <button class="btn-linea" id="escGaleria" style="padding:13px;">🖼 Elegir de la galería</button>
+        <button class="btn-linea" id="escCancelar" style="border-color:var(--linea);color:var(--suave);">Cancelar</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById("veloEsc").onclick = cerrarModal;
+  document.getElementById("escCancelar").onclick = cerrarModal;
+  document.getElementById("escCamara").onclick = () => document.getElementById("fileEscanearCam").click();
+  document.getElementById("escGaleria").onclick = () => document.getElementById("fileEscanear").click();
+};
+["fileEscanear", "fileEscanearCam"].forEach(id => {
+  document.getElementById(id).onchange = e => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (file) escanearImagen(file);
+  };
+});
+document.getElementById("btnMenus").onclick = abrirListaMenus;
+document.getElementById("buscador").addEventListener("input", e => { busqueda = e.target.value; renderLista(); });
+
+const selAl = document.getElementById("filtroAl");
+selAl.innerHTML = `<option value="">Filtro alérgenos: mostrar todo</option>` +
+  ALERGENOS.map(a => `<option value="${a.id}">Sin ${esc(a.nombre.toLowerCase())}</option>`).join("");
+selAl.onchange = e => { filtroAl = e.target.value; renderLista(); };
+
+/* ── Arranque ── */
+(async () => {
+  document.getElementById("lista").innerHTML = `<div class="vacio">Cargando recetario…</div>`;
+  const [pRaw, mRaw] = [await stGet("platos-meta"), await stGet("menus-v1")];
+  try { platos = pRaw ? JSON.parse(pRaw) : []; } catch { platos = []; }
+  try { menus = mRaw ? JSON.parse(mRaw) : []; } catch { menus = []; }
+  render();
+  iniciarNube();
+  for (const p of platos){
+    if (p.tieneFoto){
+      const f = await stGet("foto:" + p.id);
+      if (f){ fotos[p.id] = f; renderLista(); }
+    }
+  }
+})();
+</script>
+</body>
+</html>

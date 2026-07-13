@@ -1,0 +1,41 @@
+name: Compilar app de escritorio (Windows)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache de Rust (acelera compilaciones siguientes)
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar Tauri CLI
+        run: npm install
+
+      - name: Compilar instaladores
+        run: npx tauri build
+
+      - name: Subir instaladores como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: recetario-windows
+          path: |
+            src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/nsis/*.exe
