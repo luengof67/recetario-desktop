@@ -174,7 +174,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v13<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v14<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -834,12 +834,14 @@ function abrirFormulario(id){
 
 function abrirListaMenus(){
   const capa = document.getElementById("capaModal");
+  /* Ordenar por fecha de creación (o del propio menú) descendente: lo más nuevo arriba */
+  const ordenados = [...menus].sort((a, b) => (b.creado || 0) - (a.creado || 0));
   const filas = menus.length === 0
     ? `<div style="padding:24px 4px;color:var(--suave);font-size:14px;">Aún no hay menús guardados. Crea el primero: elige un título, un precio y los platos de cada apartado.</div>`
-    : menus.map(m => `<div class="fila-menu-guardado">
+    : ordenados.map(m => `<div class="fila-menu-guardado">
         <div style="flex:1;min-width:0;">
           <div class="display" style="font-size:16px;font-weight:600;">${esc(m.titulo)}</div>
-          <div style="font-size:12px;color:var(--suave);">${m.apartados.reduce((n,a)=>n+a.platoIds.length,0)} platos${m.precio ? " · " + esc(m.precio) : ""}</div>
+          <div style="font-size:12px;color:var(--suave);">${m.fecha ? "📅 " + esc(m.fecha) + " · " : ""}${m.apartados.reduce((n,a)=>n+a.platoIds.length,0)} platos${m.precio ? " · " + esc(m.precio) : ""}</div>
         </div>
         <button class="btn-linea" data-ver="${m.id}" style="padding:6px 12px;">🖨 Ver</button>
         <button class="btn-linea" data-edit="${m.id}" style="padding:6px 12px;">Editar</button>
@@ -854,7 +856,8 @@ function abrirListaMenus(){
       </div>
       <button class="btn-linea" id="btnCuadro" style="margin-top:12px;width:100%;">📋 Cuadro oficial de alérgenos (imprimible)</button>
       ${GEMINI_API_KEY ? `<button class="btn-linea" id="btnTraducirTodo" style="margin-top:8px;width:100%;">🌐 Traducir al inglés los platos que falten</button>` : ""}
-      <div style="margin-top:10px;">${filas}</div>
+      ${menus.length > 3 ? `<input class="campo" id="buscarMenu" style="margin-top:10px;" placeholder="🔎 Buscar menú por fecha o título…">` : ""}
+      <div id="listaMenus" style="margin-top:10px;">${filas}</div>
       <div style="display:flex;justify-content:flex-end;margin-top:16px;">
         <button class="btn-linea" id="btnCerrarMenus">Cerrar</button>
       </div>
@@ -884,6 +887,15 @@ function abrirListaMenus(){
       notificar("No se pudo traducir: " + (e.message || "error"));
       btnTT.disabled = false; btnTT.textContent = txt;
     }
+  };
+  const buscMenu = document.getElementById("buscarMenu");
+  if (buscMenu) buscMenu.oninput = () => {
+    const q = buscMenu.value.toLowerCase().trim();
+    document.querySelectorAll("#listaMenus .fila-menu-guardado").forEach((fila, idx) => {
+      const m = ordenados[idx];
+      const texto = (m.titulo + " " + (m.fecha || "")).toLowerCase();
+      fila.style.display = (!q || texto.includes(q)) ? "" : "none";
+    });
   };
   capa.querySelectorAll("[data-ver]").forEach(b => b.onclick = () => { cerrarModal(); previsualizarMenu(b.dataset.ver); });
   capa.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => abrirEditorMenu(b.dataset.edit));
@@ -1128,6 +1140,7 @@ async function abrirEditorMenu(id){
     err.style.display = "none";
     const obj = {
       id: m?.id || "m" + Date.now(),
+      creado: m?.creado || Date.now(),
       titulo,
       plantilla: $("mPlantilla").value,
       subtitulo: $("mSubtitulo").value.trim(),
@@ -1307,7 +1320,9 @@ function cerrarPrevisualizacion(){
 function fijarOrientacion(apaisado){
   let st = document.getElementById("estiloPagina");
   if (!st){ st = document.createElement("style"); st.id = "estiloPagina"; document.head.appendChild(st); }
-  st.textContent = "@media print{@page{size:A4 " + (apaisado ? "landscape" : "portrait") + ";margin:10mm;}}";
+  /* La regla de tamaño de página. El volteo a doble cara lo controla el diálogo de impresión;
+     con márgenes simétricos ambas caras quedan alineadas al imprimir por el lado largo. */
+  st.textContent = "@media print{@page{size:A4 " + (apaisado ? "landscape" : "portrait") + ";margin:11mm;}}";
 }
 
 /* Impresión: en la app Android usa el diálogo nativo (plugin);
