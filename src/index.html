@@ -174,7 +174,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v14<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v18<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -272,6 +272,8 @@ const SECCIONES = [
     {id:"tapas_barra",nombre:"Tapas de barra"},{id:"tapas_esp",nombre:"Tapas especiales"}]},
   { id:"experiencias", nombre:"Experiencias", icono:"✨", sub:[
     {id:"menus_esp",nombre:"Menús especiales"},{id:"catas",nombre:"Catas maridadas"},{id:"cocteles",nombre:"Cócteles"}]},
+  { id:"cafeteria", nombre:"Cafetería", icono:"☕", sub:[
+    {id:"desayunos",nombre:"Desayunos"},{id:"bocadillos",nombre:"Bocadillos"},{id:"raciones",nombre:"Raciones"},{id:"postres_cafe",nombre:"Postres"},{id:"bebidas",nombre:"Bebidas"}]},
 ];
 const SUB_A_PRINCIPAL = {}, NOMBRE_SUB = {};
 SECCIONES.forEach(s => s.sub.forEach(sub => { SUB_A_PRINCIPAL[sub.id]=s; NOMBRE_SUB[sub.id]=sub.nombre; }));
@@ -1444,30 +1446,40 @@ function previsualizarCuadro(nombre, seccionesSel){
    AÑADIR PLATOS DESDE FOTOGRAFÍA (Gemini)
    ══════════════════════════════════════════════════════════ */
 async function llamarGemini(base64, prompt, mime){
-  /* Prueba el modelo configurado y, si Google lo ha retirado, los de respaldo */
+  /* Prueba el modelo configurado y, si Google lo ha retirado, los de respaldo.
+     Ante sobrecarga temporal (503/429/"high demand") reintenta con una pequeña espera. */
   const modelos = [...new Set([GEMINI_MODELO, ...GEMINI_RESPALDO])];
   let ultimoError = "sin conexión";
   for (const modelo of modelos){
-    try {
-      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [
-            { inline_data: { mime_type: mime || "image/jpeg", data: base64 } },
-            { text: prompt }
-          ]}]
-        })
-      });
-      if (resp.ok) return await resp.json();
-      const err = await resp.json().catch(() => ({}));
-      ultimoError = err?.error?.message || ("HTTP " + resp.status);
-      /* Si el modelo no existe o fue retirado, probar el siguiente; otros errores (clave inválida, cuota) no se reintentan */
-      const msg = ultimoError.toLowerCase();
-      if (!(resp.status === 404 || msg.includes("no longer available") || msg.includes("not found") || msg.includes("deprecated"))) break;
-    } catch(e){
-      ultimoError = e.message || "error de red";
-      break;
+    for (let intento = 0; intento < 3; intento++){
+      try {
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [
+              { inlineData: { mimeType: mime || "image/jpeg", data: base64 } },
+              { text: prompt }
+            ]}]
+          })
+        });
+        if (resp.ok) return await resp.json();
+        const err = await resp.json().catch(() => ({}));
+        ultimoError = err?.error?.message || ("HTTP " + resp.status);
+        const msg = ultimoError.toLowerCase();
+        const sobrecarga = resp.status === 503 || resp.status === 429 || msg.includes("overloaded") || msg.includes("high demand") || msg.includes("unavailable") || msg.includes("try again");
+        if (sobrecarga && intento < 2){
+          await new Promise(r => setTimeout(r, 1500 * (intento + 1))); /* espera creciente y reintenta el mismo modelo */
+          continue;
+        }
+        /* Si el modelo no existe o fue retirado, saltar al siguiente modelo; otros errores paran */
+        if (resp.status === 404 || msg.includes("no longer available") || msg.includes("not found") || msg.includes("deprecated")) break;
+        return Promise.reject(new Error(ultimoError));
+      } catch(e){
+        ultimoError = e.message || "error de red";
+        if (intento < 2){ await new Promise(r => setTimeout(r, 1200)); continue; }
+        break;
+      }
     }
   }
   throw new Error(ultimoError);
@@ -1481,25 +1493,34 @@ Platos: ${JSON.stringify(nombres)}`;
   const modelos = [...new Set([GEMINI_MODELO, ...GEMINI_RESPALDO])];
   let ultimoError = "sin conexión";
   for (const modelo of modelos){
-    try {
-      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-      });
-      if (resp.ok){
-        const data = await resp.json();
-        let texto = (data?.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("");
-        texto = texto.replace(/```json|```/g, "").trim();
-        const ini = texto.indexOf("["), fin = texto.lastIndexOf("]");
-        if (ini === -1 || fin === -1) throw new Error("respuesta sin JSON");
-        return JSON.parse(texto.slice(ini, fin + 1)).map(s => String(s).trim());
+    for (let intento = 0; intento < 3; intento++){
+      try {
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+        if (resp.ok){
+          const data = await resp.json();
+          let texto = (data?.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("");
+          texto = texto.replace(/```json|```/g, "").trim();
+          const ini = texto.indexOf("["), fin = texto.lastIndexOf("]");
+          if (ini === -1 || fin === -1) throw new Error("respuesta sin JSON");
+          return JSON.parse(texto.slice(ini, fin + 1)).map(s => String(s).trim());
+        }
+        const err = await resp.json().catch(() => ({}));
+        ultimoError = err?.error?.message || ("HTTP " + resp.status);
+        const msg = ultimoError.toLowerCase();
+        const sobrecarga = resp.status === 503 || resp.status === 429 || msg.includes("overloaded") || msg.includes("high demand") || msg.includes("unavailable") || msg.includes("try again");
+        if (sobrecarga && intento < 2){ await new Promise(r => setTimeout(r, 1500 * (intento + 1))); continue; }
+        if (resp.status === 404 || msg.includes("no longer available") || msg.includes("not found") || msg.includes("deprecated")) break;
+        return Promise.reject(new Error(ultimoError));
+      } catch(e){
+        ultimoError = e.message || "error de red";
+        if (intento < 2){ await new Promise(r => setTimeout(r, 1200)); continue; }
+        break;
       }
-      const err = await resp.json().catch(() => ({}));
-      ultimoError = err?.error?.message || ("HTTP " + resp.status);
-      const msg = ultimoError.toLowerCase();
-      if (!(resp.status === 404 || msg.includes("no longer available") || msg.includes("not found") || msg.includes("deprecated"))) break;
-    } catch(e){ ultimoError = e.message || "error de red"; break; }
+    }
   }
   throw new Error(ultimoError);
 }
@@ -1566,7 +1587,11 @@ Si no hay platos legibles, responde [].`;
     }).filter(d => d.nombre));
   } catch(e){
     cerrarModal();
-    notificar("No se pudo leer el documento: " + (e.message || "error de conexión"));
+    const msg = (e.message || "").toLowerCase();
+    if (msg.includes("high demand") || msg.includes("overloaded") || msg.includes("unavailable"))
+      notificar("El servicio está saturado ahora mismo. Espera un momento y vuelve a intentarlo.");
+    else
+      notificar("No se pudo leer el documento. Detalle: " + (e.message || "error de conexión"));
   }
 }
 
