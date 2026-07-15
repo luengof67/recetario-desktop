@@ -174,7 +174,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v18<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v19<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -192,7 +192,7 @@ h2.hh-tras::after{display:none;}
     <select id="filtroAl" class="campo" style="flex:0 1 260px;"></select>
     <button id="btnNuevo" class="btn-verde" style="display:none;">+ Añadir plato</button>
     <button id="btnEscanear" class="btn-linea" style="display:none;">📷 Desde foto</button>
-    <input type="file" id="fileEscanear" accept="image/*,application/pdf" style="display:none;">
+    <input type="file" id="fileEscanear" accept="image/*,application/pdf,.docx,.doc,.txt" style="display:none;">
     <input type="file" id="fileEscanearCam" accept="image/*" capture="environment" style="display:none;">
   </div>
   <div id="notaFiltro" style="font-size:13px;color:var(--suave);margin-bottom:8px;display:none;"></div>
@@ -202,6 +202,7 @@ h2.hh-tras::after{display:none;}
 <div id="aviso"></div>
 <div id="capaModal"></div>
 <div id="capaImpresion"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
 
 <script>
 /* ══════════════════════════════════════════════════════════
@@ -1534,23 +1535,9 @@ function archivoABase64(file){
   });
 }
 
-async function escanearImagen(file){
-  const capa = document.getElementById("capaModal");
-  capa.innerHTML = `<div class="velo">
-    <div class="modal" style="padding:30px 24px;text-align:center;">
-      <div style="font-size:36px;">📷</div>
-      <div class="display" style="font-size:20px;font-weight:600;margin-top:8px;">Leyendo el documento…</div>
-      <div style="font-size:13px;color:var(--suave);margin-top:6px;">Detectando platos, secciones e ingredientes. Suele tardar unos segundos.</div>
-    </div>
-  </div>`;
-  try {
-    const esPdf = file.type === "application/pdf";
-    let base64, mime;
-    if (esPdf){ base64 = await archivoABase64(file); mime = "application/pdf"; }
-    else { const dataUrl = await comprimirImagen(file); base64 = dataUrl.split(",")[1]; mime = "image/jpeg"; }
-
-    const listaSecciones = SECCIONES.map(s => s.sub.map(sub => `"${sub.id}" = ${s.nombre} / ${sub.nombre}`).join("; ")).join("; ");
-    const prompt = `Analiza este documento de un restaurante español (carta, menú del día, ficha de cocina, pizarra o lista manuscrita).
+function promptDeteccion(){
+  const listaSecciones = SECCIONES.map(s => s.sub.map(sub => `"${sub.id}" = ${s.nombre} / ${sub.nombre}`).join("; ")).join("; ");
+  return `Analiza este documento de un restaurante español (carta, menú del día, ficha de cocina, pizarra o lista manuscrita).
 Extrae TODOS los platos que aparezcan. Para cada plato:
 - "nombre": el nombre del plato tal como aparece.
 - "nombre_en": traducción breve y natural del nombre del plato al inglés (si el documento ya la incluye, usa esa).
@@ -1560,39 +1547,118 @@ Extrae TODOS los platos que aparezcan. Para cada plato:
 Responde SOLO con un array JSON válido, sin texto adicional ni marcas de código:
 [{"nombre":"...","nombre_en":"...","descripcion":"","seccion":"primeros","ingredientes":["...","..."]}]
 Si no hay platos legibles, responde [].`;
+}
 
-    const resp = await llamarGemini(base64, prompt, mime);
-    let texto = (resp?.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("");
-    texto = texto.replace(/```json|```/g, "").trim();
-    const inicio = texto.indexOf("["), fin = texto.lastIndexOf("]");
-    if (inicio === -1 || fin === -1) throw new Error("respuesta sin JSON");
-    const detectados = JSON.parse(texto.slice(inicio, fin + 1));
-    if (!Array.isArray(detectados) || detectados.length === 0){
-      cerrarModal();
-      notificar("No se han detectado platos. Prueba con una imagen más nítida.");
-      return;
-    }
-    abrirRevisionEscaneo(detectados.map(d => {
-      const ings = Array.isArray(d.ingredientes) ? d.ingredientes.map(i => String(i).trim()).filter(Boolean) : [];
-      return {
-        incluir: true,
-        nombre: String(d.nombre || "").trim(),
-        nombreEn: String(d.nombre_en || "").trim(),
-        descripcion: String(d.descripcion || "").trim(),
-        ingredientes: ings,
-        subseccion: NOMBRE_SUB[d.seccion] ? d.seccion : "primeros",
-        alergenos: sugerirAlergenos(ings),
-        foto: null,
-      };
-    }).filter(d => d.nombre));
-  } catch(e){
+function mostrarLeyendo(){
+  const capa = document.getElementById("capaModal");
+  capa.innerHTML = `<div class="velo">
+    <div class="modal" style="padding:30px 24px;text-align:center;">
+      <div style="font-size:36px;">📄</div>
+      <div class="display" style="font-size:20px;font-weight:600;margin-top:8px;">Leyendo el documento…</div>
+      <div style="font-size:13px;color:var(--suave);margin-top:6px;">Detectando platos, secciones e ingredientes. Suele tardar unos segundos.</div>
+    </div>
+  </div>`;
+}
+
+function procesarRespuestaDeteccion(resp){
+  let texto = (resp?.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("");
+  texto = texto.replace(/```json|```/g, "").trim();
+  const inicio = texto.indexOf("["), fin = texto.lastIndexOf("]");
+  if (inicio === -1 || fin === -1) throw new Error("respuesta sin JSON");
+  const detectados = JSON.parse(texto.slice(inicio, fin + 1));
+  if (!Array.isArray(detectados) || detectados.length === 0){
     cerrarModal();
-    const msg = (e.message || "").toLowerCase();
-    if (msg.includes("high demand") || msg.includes("overloaded") || msg.includes("unavailable"))
-      notificar("El servicio está saturado ahora mismo. Espera un momento y vuelve a intentarlo.");
-    else
-      notificar("No se pudo leer el documento. Detalle: " + (e.message || "error de conexión"));
+    notificar("No se han detectado platos. Prueba con un documento más claro.");
+    return;
   }
+  abrirRevisionEscaneo(detectados.map(d => {
+    const ings = Array.isArray(d.ingredientes) ? d.ingredientes.map(i => String(i).trim()).filter(Boolean) : [];
+    return {
+      incluir: true,
+      nombre: String(d.nombre || "").trim(),
+      nombreEn: String(d.nombre_en || "").trim(),
+      descripcion: String(d.descripcion || "").trim(),
+      ingredientes: ings,
+      subseccion: NOMBRE_SUB[d.seccion] ? d.seccion : "primeros",
+      alergenos: sugerirAlergenos(ings),
+      foto: null,
+    };
+  }).filter(d => d.nombre));
+}
+
+function manejarErrorDeteccion(e){
+  cerrarModal();
+  const msg = (e.message || "").toLowerCase();
+  if (msg.includes("high demand") || msg.includes("overloaded") || msg.includes("unavailable"))
+    notificar("El servicio está saturado ahora mismo. Espera un momento y vuelve a intentarlo.");
+  else
+    notificar("No se pudo leer el documento. Detalle: " + (e.message || "error de conexión"));
+}
+
+/* Detectar platos a partir de TEXTO (Word, txt o texto pegado de una web) */
+async function procesarTexto(textoDoc){
+  if (!textoDoc || textoDoc.trim().length < 3){ notificar("No hay texto que analizar."); return; }
+  mostrarLeyendo();
+  try {
+    const resp = await llamarGeminiTexto(promptDeteccion() + "\n\nDOCUMENTO:\n" + textoDoc.slice(0, 20000));
+    procesarRespuestaDeteccion(resp);
+  } catch(e){ manejarErrorDeteccion(e); }
+}
+
+/* Igual que llamarGemini pero solo texto (sin imagen) */
+async function llamarGeminiTexto(prompt){
+  const modelos = [...new Set([GEMINI_MODELO, ...GEMINI_RESPALDO])];
+  let ultimoError = "sin conexión";
+  for (const modelo of modelos){
+    for (let intento = 0; intento < 3; intento++){
+      try {
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+        if (resp.ok) return await resp.json();
+        const err = await resp.json().catch(() => ({}));
+        ultimoError = err?.error?.message || ("HTTP " + resp.status);
+        const msg = ultimoError.toLowerCase();
+        const sobrecarga = resp.status === 503 || resp.status === 429 || msg.includes("overloaded") || msg.includes("high demand") || msg.includes("unavailable") || msg.includes("try again");
+        if (sobrecarga && intento < 2){ await new Promise(r => setTimeout(r, 1500 * (intento + 1))); continue; }
+        if (resp.status === 404 || msg.includes("no longer available") || msg.includes("not found") || msg.includes("deprecated")) break;
+        return Promise.reject(new Error(ultimoError));
+      } catch(e){ ultimoError = e.message || "error de red"; if (intento < 2){ await new Promise(r => setTimeout(r, 1200)); continue; } break; }
+    }
+  }
+  throw new Error(ultimoError);
+}
+
+async function escanearImagen(file){
+  const nombre = (file.name || "").toLowerCase();
+  /* Word: extraer texto con mammoth y procesar como texto */
+  if (nombre.endsWith(".docx") || nombre.endsWith(".doc")){
+    mostrarLeyendo();
+    try {
+      const buffer = await file.arrayBuffer();
+      const res = await window.mammoth.extractRawText({ arrayBuffer: buffer });
+      cerrarModal();
+      await procesarTexto(res.value || "");
+    } catch(e){ cerrarModal(); notificar("No se pudo leer el Word: " + (e.message || "error")); }
+    return;
+  }
+  /* Texto plano */
+  if (nombre.endsWith(".txt")){
+    try { const t = await file.text(); await procesarTexto(t); }
+    catch(e){ notificar("No se pudo leer el archivo de texto."); }
+    return;
+  }
+  /* Imagen o PDF: enviar a Gemini con visión */
+  mostrarLeyendo();
+  try {
+    const esPdf = file.type === "application/pdf" || nombre.endsWith(".pdf");
+    let base64, mime;
+    if (esPdf){ base64 = await archivoABase64(file); mime = "application/pdf"; }
+    else { const dataUrl = await comprimirImagen(file); base64 = dataUrl.split(",")[1]; mime = "image/jpeg"; }
+    const resp = await llamarGemini(base64, promptDeteccion(), mime);
+    procesarRespuestaDeteccion(resp);
+  } catch(e){ manejarErrorDeteccion(e); }
 }
 
 function abrirRevisionEscaneo(items){
@@ -1836,10 +1902,11 @@ document.getElementById("btnNuevo").onclick = () => {
       <div style="display:grid;gap:10px;">
         <button class="btn-verde" id="nuevoMano" style="padding:14px;">✍️ Crear a mano</button>
         <button class="btn-verde" id="nuevoCam" style="padding:14px;">📷 Fotografiar carta o menú</button>
-        <button class="btn-linea" id="nuevoDoc" style="padding:13px;">🖼 Desde imagen o PDF de la galería</button>
+        <button class="btn-linea" id="nuevoDoc" style="padding:13px;">📎 Desde archivo (imagen, PDF o Word)</button>
+        <button class="btn-linea" id="nuevoTexto" style="padding:13px;">📋 Pegar texto (de una web, correo…)</button>
         <button class="btn-linea" id="nuevoCancelar" style="border-color:var(--linea);color:var(--suave);">Cancelar</button>
       </div>
-      <p style="font-size:12px;color:var(--suave);margin:12px 0 0;">Con foto o documento se detectan todos los platos que aparezcan (un menú entero de una vez) y los revisas antes de guardar.</p>
+      <p style="font-size:12px;color:var(--suave);margin:12px 0 0;">Con foto, archivo o texto se detectan todos los platos que aparezcan (un menú entero de una vez) y los revisas antes de guardar.</p>
     </div>
   </div>`;
   document.getElementById("veloNuevo").onclick = cerrarModal;
@@ -1847,7 +1914,29 @@ document.getElementById("btnNuevo").onclick = () => {
   document.getElementById("nuevoMano").onclick = () => { cerrarModal(); abrirFormulario(null); };
   document.getElementById("nuevoCam").onclick = () => document.getElementById("fileEscanearCam").click();
   document.getElementById("nuevoDoc").onclick = () => document.getElementById("fileEscanear").click();
+  document.getElementById("nuevoTexto").onclick = abrirPegarTexto;
 };
+
+function abrirPegarTexto(){
+  const capa = document.getElementById("capaModal");
+  capa.innerHTML = `<div class="velo" id="veloTexto">
+    <div class="modal" onclick="event.stopPropagation()" style="padding:22px 24px 24px;">
+      <h2 class="display" style="font-size:20px;font-weight:700;margin:0 0 6px;">Pegar texto</h2>
+      <p style="font-size:13px;color:var(--suave);margin:0 0 12px;">Copia el texto de una página web, un correo o un documento y pégalo aquí. La IA detectará los platos.</p>
+      <textarea class="campo" id="textoPegado" rows="9" placeholder="Pega aquí el texto con los platos…"></textarea>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+        <button class="btn-linea" id="txtCancelar">Cancelar</button>
+        <button class="btn-verde" id="txtDetectar">Detectar platos</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById("veloTexto").onclick = cerrarModal;
+  document.getElementById("txtCancelar").onclick = cerrarModal;
+  document.getElementById("txtDetectar").onclick = () => {
+    const t = document.getElementById("textoPegado").value;
+    procesarTexto(t);
+  };
+}
 document.getElementById("btnEscanear").onclick = () => {
   const capa = document.getElementById("capaModal");
   capa.innerHTML = `<div class="velo" id="veloEsc">
