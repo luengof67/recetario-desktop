@@ -145,6 +145,38 @@ h2.hh-tras::after{display:none;}
 .pt-nombre{font-size:15.5px;font-weight:700;color:#20291F;}
 .pt-linea{font-size:12.5px;color:#333;font-style:italic;margin-top:1px;}
 .pt-linea b{font-style:normal;}
+/* ── Plantilla PIZARRA ── */
+.hoja-pizarra{background:#20291F !important;color:#F5F6F2 !important;font-family:'Fraunces',Georgia,serif;
+  border:none;padding:48px 52px;position:relative;}
+.hoja-pizarra .cab{border-bottom:2px dashed #6b7a63;padding-bottom:16px;}
+.hoja-pizarra h1{color:#fff !important;font-size:40px;}
+.hoja-pizarra .resto, .hoja-pizarra .fecha{color:#c9d2c0 !important;}
+.hoja-pizarra .precio{color:#DDA321 !important;}
+.hoja-pizarra h2{color:#DDA321 !important;font-size:20px;border:none;}
+.hoja-pizarra h2::after{background:#6b7a63 !important;}
+.hoja-pizarra .plato-nombre{color:#fff !important;}
+.hoja-pizarra .plato-desc{color:#b6c0ad !important;}
+.hoja-pizarra .leyenda{border-top:1px dashed #6b7a63 !important;}
+.hoja-pizarra .leyenda-titulo, .hoja-pizarra .leyenda-items, .hoja-pizarra .pie{color:#c9d2c0 !important;}
+/* ── Plantilla COLUMNAS (cafetería con precios) ── */
+.hoja-col h2{text-align:left;}
+.hoja-col h2::after{margin:8px 0 0;}
+.col-linea{display:flex;align-items:baseline;gap:8px;padding:5px 0;}
+.col-nombre{font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:600;white-space:nowrap;}
+.col-puntos{flex:1;border-bottom:1.5px dotted #C9CEC2;transform:translateY(-4px);min-width:20px;}
+.col-precio{font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:600;color:#2F5233;white-space:nowrap;}
+.col-al{font-size:12px;color:#66705F;margin-left:2px;}
+.col-desc{font-size:12px;color:#66705F;margin-top:-2px;}
+/* ── Plantilla ELEGANTE (una columna centrada) ── */
+.hoja-eleg{font-family:'Fraunces',Georgia,serif;padding:60px 70px;}
+.hoja-eleg .cab{border-bottom:1px solid #DDA321;}
+.hoja-eleg h1{font-size:36px;letter-spacing:.02em;}
+.hoja-eleg h2{font-size:15px;letter-spacing:.24em;color:#20291F;}
+.hoja-eleg h2::after{background:#DDA321;}
+.eleg-plato{text-align:center;padding:10px 0;}
+.eleg-nombre{font-size:19px;font-weight:600;}
+.eleg-desc{font-size:13px;color:#66705F;font-style:italic;margin-top:2px;}
+.eleg-al{font-size:12px;color:#8a8375;margin-top:3px;letter-spacing:1px;}
 @media print{
   html, body{overflow:visible !important;height:auto !important;}
   body > *{display:none !important;}
@@ -160,6 +192,7 @@ h2.hh-tras::after{display:none;}
   .hoja-hotel .leyenda-hotel{margin-top:20px !important;gap:8px 14px !important;}
   .hoja-hotel .hh-pie{margin-top:16px !important;}
   .hoja-salto{page-break-before:always !important;break-before:page !important;}
+  .hoja-pizarra{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;background:#20291F !important;color:#F5F6F2 !important;}
   .ph, .pt, .hh-nota, .hh-precios, .leyenda-hotel, .hh-pie{page-break-inside:avoid;break-inside:avoid;}
   .hoja > *:last-child{page-break-after:auto;}
   @page{margin:11mm;}
@@ -174,11 +207,12 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v19<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v23<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
       <button id="btnCopia" class="btn-blanco">⇅ Copia</button>
+      <button id="btnAyuda" class="btn-blanco">❓ Guía</button>
       <button id="btnModo" class="btn-blanco">✎ Modo edición</button>
     </div>
   </div>
@@ -188,7 +222,7 @@ h2.hh-tras::after{display:none;}
   <div id="tabsSecciones" class="fila-tabs"></div>
   <div id="tabsSub" class="fila-subs" style="display:none;"></div>
   <div class="fila-filtros">
-    <input id="buscador" class="campo" style="flex:1 1 220px;" placeholder="Buscar plato o ingrediente…">
+    <input id="buscador" class="campo" style="flex:1 1 220px;" placeholder="Buscar por plato, ingrediente, alérgeno o sección…">
     <select id="filtroAl" class="campo" style="flex:0 1 260px;"></select>
     <button id="btnNuevo" class="btn-verde" style="display:none;">+ Añadir plato</button>
     <button id="btnEscanear" class="btn-linea" style="display:none;">📷 Desde foto</button>
@@ -257,11 +291,11 @@ const CODIGO_EQUIPO = "jose403060";
    Si se deja en null, el botón de escanear no aparece y todo
    lo demás funciona igual.
    ══════════════════════════════════════════════════════════ */
-const GEMINI_API_KEY_BRUTA = "__CLAVE_GEMINI__";
+const GEMINI_API_KEY_BRUTA = "AQ.Ab8RN6KODoLU7GBgox623zGgI3sEbZiduxgPt8nxFgoIVxaQfw";
 const GEMINI_API_KEY = (GEMINI_API_KEY_BRUTA && !GEMINI_API_KEY_BRUTA.includes("__CLAVE")) ? GEMINI_API_KEY_BRUTA : null;
-const GEMINI_MODELO = "gemini-3.5-flash";
-/* Si el modelo principal deja de existir, se prueban estos por orden: */
-const GEMINI_RESPALDO = ["gemini-3.5-flash", "gemini-flash-latest", "gemini-3.1-flash-lite", "gemini-3-flash-preview"];
+const GEMINI_MODELO = "gemini-flash-latest";
+/* Si el modelo principal falla o está saturado, se prueban estos por orden: */
+const GEMINI_RESPALDO = ["gemini-flash-latest", "gemini-2.0-flash", "gemini-flash-lite-latest", "gemini-3.5-flash", "gemini-2.0-flash-lite"];
 
 /* ── Secciones ── */
 const SECCIONES = [
@@ -537,8 +571,12 @@ function platosVisibles(){
     if (subseccion !== "todas" && p.subseccion !== subseccion) return false;
     if (filtroAl && p.alergenos.includes(filtroAl)) return false;
     if (busqueda){
-      const t = (p.nombre + " " + p.ingredientes.join(" ")).toLowerCase();
-      if (!t.includes(busqueda.toLowerCase())) return false;
+      const nombresAl = p.alergenos.map(a => AL_MAP[a]?.nombre || "").join(" ");
+      const seccionTxt = (SUB_A_PRINCIPAL[p.subseccion]?.nombre || "") + " " + (NOMBRE_SUB[p.subseccion] || "");
+      const t = (p.nombre + " " + (p.nombreEn || "") + " " + p.ingredientes.join(" ") + " " + nombresAl + " " + seccionTxt).toLowerCase();
+      /* cada palabra buscada debe aparecer (permite "merluza sin gluten"→ no, pero "pescado carta" sí) */
+      const palabras = busqueda.toLowerCase().split(/\s+/).filter(Boolean);
+      if (!palabras.every(w => t.includes(w))) return false;
     }
     return true;
   });
@@ -616,6 +654,7 @@ function abrirFicha(id){
         <div style="display:flex;gap:10px;margin-top:24px;justify-content:flex-end;">
           ${modo === "edicion" ? `
             <button class="btn-linea peligro" id="btnBorrar">Eliminar</button>
+            <button class="btn-linea" id="btnDuplicar">Duplicar</button>
             <button class="btn-linea" id="btnEditar">Editar</button>` : ""}
           <button class="btn-verde" id="btnCerrar">Cerrar</button>
         </div>
@@ -626,10 +665,28 @@ function abrirFicha(id){
   document.getElementById("btnCerrar").onclick = cerrarModal;
   if (modo === "edicion"){
     document.getElementById("btnBorrar").onclick = () => borrarPlato(id);
+    document.getElementById("btnDuplicar").onclick = () => duplicarPlato(id);
     document.getElementById("btnEditar").onclick = () => { cerrarModal(); abrirFormulario(id); };
   }
 }
 function cerrarModal(){ document.getElementById("capaModal").innerHTML = ""; }
+
+async function duplicarPlato(id){
+  const p = platos.find(x => x.id === id); if (!p) return;
+  const copia = {
+    ...p,
+    id: "p" + Date.now(),
+    nombre: p.nombre + " (copia)",
+    tieneFoto: false, /* la copia empieza sin foto; se le pone una nueva si se quiere */
+  };
+  platos.push(copia);
+  try {
+    await guardarPlatosStore();
+    cerrarModal(); render();
+    notificar("Plato duplicado — edítalo para ajustarlo");
+    abrirFormulario(copia.id); /* abre directamente la copia para editarla */
+  } catch { notificar("No se pudo duplicar."); }
+}
 
 async function borrarPlato(id){
   if (!confirm("¿Eliminar este plato de forma permanente?")) return;
@@ -678,6 +735,10 @@ function abrirFormulario(id){
         <div>
           <label class="campo-lbl" for="fDesc">Descripción (opcional)</label>
           <textarea class="campo" id="fDesc" rows="2" placeholder="Nota breve para el equipo de sala…">${esc(p?.descripcion || "")}</textarea>
+        </div>
+        <div>
+          <label class="campo-lbl" for="fPrecio">Precio <span style="font-weight:400;color:var(--suave);">(opcional, para cartas con precio por plato)</span></label>
+          <input class="campo" id="fPrecio" value="${esc(p?.precio || "")}" placeholder="Ej.: 4,50 €">
         </div>
         <div>
           <label class="campo-lbl" for="fIng">Ingredientes * <span style="font-weight:400;color:var(--suave);">(sin cantidades — separa con comas y pulsa Añadir)</span></label>
@@ -805,6 +866,7 @@ function abrirFormulario(id){
       nombreEn: $("fNombreEn").value.trim(),
       subseccion: $("fSub").value,
       descripcion: $("fDesc").value.trim(),
+      precio: $("fPrecio").value.trim(),
       ingredientes, alergenos,
       tieneFoto: !!foto,
     };
@@ -848,6 +910,7 @@ function abrirListaMenus(){
         </div>
         <button class="btn-linea" data-ver="${m.id}" style="padding:6px 12px;">🖨 Ver</button>
         <button class="btn-linea" data-edit="${m.id}" style="padding:6px 12px;">Editar</button>
+        <button class="btn-linea" data-dup="${m.id}" style="padding:6px 12px;" title="Crear uno nuevo a partir de este">⧉ Repetir</button>
         <button class="btn-linea peligro" data-del="${m.id}" style="padding:6px 12px;">✕</button>
       </div>`).join("");
 
@@ -902,6 +965,19 @@ function abrirListaMenus(){
   };
   capa.querySelectorAll("[data-ver]").forEach(b => b.onclick = () => { cerrarModal(); previsualizarMenu(b.dataset.ver); });
   capa.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => abrirEditorMenu(b.dataset.edit));
+  capa.querySelectorAll("[data-dup]").forEach(b => b.onclick = async () => {
+    const orig = menus.find(x => x.id === b.dataset.dup); if (!orig) return;
+    const copia = {
+      ...orig,
+      id: "m" + Date.now(),
+      creado: Date.now(),
+      apartados: orig.apartados.map(a => ({ titulo: a.titulo, platoIds: [...a.platoIds] })),
+      fecha: "", /* fecha en blanco para que pongas la del nuevo día */
+    };
+    menus.push(copia);
+    try { await guardarMenusStore(); } catch(e){}
+    abrirEditorMenu(copia.id); /* abre la copia para ajustar fecha y platos */
+  });
   capa.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
     if (!confirm("¿Eliminar este menú? Los platos del recetario no se borran.")) return;
     menus = menus.filter(m => m.id !== b.dataset.del);
@@ -935,6 +1011,9 @@ async function abrirEditorMenu(id){
           <select class="campo" id="mPlantilla">
             <option value="clasica"${(m?.plantilla || "clasica") === "clasica" ? " selected" : ""}>Clásica (elegante, con iconos)</option>
             <option value="hotel"${m?.plantilla === "hotel" ? " selected" : ""}>Hotel bilingüe (números de alérgenos + inglés)</option>
+            <option value="pizarra"${m?.plantilla === "pizarra" ? " selected" : ""}>Pizarra (fondo oscuro, tiza)</option>
+            <option value="columnas"${m?.plantilla === "columnas" ? " selected" : ""}>Cafetería en columnas con precios</option>
+            <option value="elegante"${m?.plantilla === "elegante" ? " selected" : ""}>Carta elegante (una columna)</option>
           </select>
         </div>
         <div>
@@ -1265,8 +1344,44 @@ async function previsualizarMenu(id){
       ${leyendaHotel()}
       ${pie}
     </div>` + hojaTrasera;
+  } else if (m.plantilla === "columnas"){
+    /* ── Plantilla columnas (cafetería con precios por plato) ── */
+    const usados = new Set();
+    const bloques = m.apartados.map(a => {
+      const lineas = a.platoIds.map(pid => {
+        const p = platos.find(x => x.id === pid);
+        if (!p) return "";
+        p.alergenos.forEach(al => usados.add(al));
+        const nums = p.alergenos.map(al => AL_MAP[al]?.icono || "").join("");
+        return `<div class="col-linea">
+            <span class="col-nombre">${esc(p.nombre)}</span>
+            ${nums ? `<span class="col-al">${nums}</span>` : ""}
+            <span class="col-puntos"></span>
+            <span class="col-precio">${esc(p.precio || "")}</span>
+          </div>${p.descripcion ? `<div class="col-desc">${esc(p.descripcion)}</div>` : ""}`;
+      }).join("");
+      if (!lineas) return "";
+      return `<h2>${esc(a.titulo)}</h2>${lineas}`;
+    }).join("");
+    const leyenda = [...usados].map(al => { const a = AL_MAP[al]; return a ? `<div>${a.icono} ${esc(a.nombre)}</div>` : ""; }).join("");
+    capa.innerHTML = barra + `
+    <div class="hoja hoja-col">
+      <div class="cab">
+        ${m.subtitulo ? `<div class="resto">${esc(m.subtitulo)}</div>` : ""}
+        <h1>${esc(m.titulo)}</h1>
+        ${m.fecha ? `<div class="fecha">${esc(m.fecha)}</div>` : ""}
+      </div>
+      ${bloques}
+      ${leyenda ? `<div class="leyenda">
+        <div class="leyenda-titulo">Alérgenos (Reglamento UE 1169/2011)</div>
+        <div class="leyenda-items">${leyenda}</div>
+      </div>` : ""}
+      ${m.pie ? `<div class="pie">${esc(m.pie)}</div>` : ""}
+    </div>`;
   } else {
-    /* ── Plantilla clásica ── */
+    /* ── Plantillas clásica, pizarra y elegante (comparten estructura) ── */
+    const claseHoja = m.plantilla === "pizarra" ? "hoja-pizarra" : (m.plantilla === "elegante" ? "hoja-eleg" : "");
+    const claseLinea = m.plantilla === "elegante" ? "eleg-plato" : "plato-linea";
     const usados = new Set();
     const bloques = m.apartados.map(a => {
       const lineas = a.platoIds.map(pid => {
@@ -1274,6 +1389,13 @@ async function previsualizarMenu(id){
         if (!p) return "";
         p.alergenos.forEach(al => usados.add(al));
         const iconos = p.alergenos.map(al => AL_MAP[al]?.icono || "").join(" ");
+        if (m.plantilla === "elegante"){
+          return `<div class="eleg-plato">
+            <div class="eleg-nombre">${esc(p.nombre)}</div>
+            ${p.descripcion ? `<div class="eleg-desc">${esc(p.descripcion)}</div>` : ""}
+            ${iconos ? `<div class="eleg-al">${iconos}</div>` : ""}
+          </div>`;
+        }
         return `<div class="plato-linea">
           <div>
             <div class="plato-nombre">${esc(p.nombre)}</div>
@@ -1292,7 +1414,7 @@ async function previsualizarMenu(id){
     }).join("");
 
     capa.innerHTML = barra + `
-    <div class="hoja">
+    <div class="hoja ${claseHoja}">
       <div class="cab">
         ${m.subtitulo ? `<div class="resto">${esc(m.subtitulo)}</div>` : ""}
         <h1>${esc(m.titulo)}</h1>
@@ -1473,6 +1595,7 @@ async function llamarGemini(base64, prompt, mime){
           await new Promise(r => setTimeout(r, 1500 * (intento + 1))); /* espera creciente y reintenta el mismo modelo */
           continue;
         }
+        if (sobrecarga) break; /* agotados los reintentos: probar el siguiente modelo */
         /* Si el modelo no existe o fue retirado, saltar al siguiente modelo; otros errores paran */
         if (resp.status === 404 || msg.includes("no longer available") || msg.includes("not found") || msg.includes("deprecated")) break;
         return Promise.reject(new Error(ultimoError));
@@ -1514,6 +1637,7 @@ Platos: ${JSON.stringify(nombres)}`;
         const msg = ultimoError.toLowerCase();
         const sobrecarga = resp.status === 503 || resp.status === 429 || msg.includes("overloaded") || msg.includes("high demand") || msg.includes("unavailable") || msg.includes("try again");
         if (sobrecarga && intento < 2){ await new Promise(r => setTimeout(r, 1500 * (intento + 1))); continue; }
+        if (sobrecarga) break; /* agotados los reintentos: probar el siguiente modelo */
         if (resp.status === 404 || msg.includes("no longer available") || msg.includes("not found") || msg.includes("deprecated")) break;
         return Promise.reject(new Error(ultimoError));
       } catch(e){
@@ -1622,6 +1746,7 @@ async function llamarGeminiTexto(prompt){
         const msg = ultimoError.toLowerCase();
         const sobrecarga = resp.status === 503 || resp.status === 429 || msg.includes("overloaded") || msg.includes("high demand") || msg.includes("unavailable") || msg.includes("try again");
         if (sobrecarga && intento < 2){ await new Promise(r => setTimeout(r, 1500 * (intento + 1))); continue; }
+        if (sobrecarga) break; /* agotados los reintentos: probar el siguiente modelo */
         if (resp.status === 404 || msg.includes("no longer available") || msg.includes("not found") || msg.includes("deprecated")) break;
         return Promise.reject(new Error(ultimoError));
       } catch(e){ ultimoError = e.message || "error de red"; if (intento < 2){ await new Promise(r => setTimeout(r, 1200)); continue; } break; }
@@ -1883,6 +2008,51 @@ function abrirCopia(){
 
 /* ── Controles superiores ── */
 document.getElementById("btnCopia").onclick = abrirCopia;
+document.getElementById("btnAyuda").onclick = abrirGuia;
+
+function abrirGuia(){
+  const S = (titulo, cuerpo) => `<div style="margin-bottom:18px;">
+    <div style="font-size:15px;font-weight:700;color:var(--verde);margin-bottom:6px;">${titulo}</div>
+    <div style="font-size:14px;line-height:1.6;color:var(--tinta);">${cuerpo}</div>
+  </div>`;
+  const capa = document.getElementById("capaModal");
+  capa.innerHTML = `<div class="velo" id="veloGuia">
+    <div class="modal ancho" onclick="event.stopPropagation()" style="padding:24px 26px 26px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px;">
+        <h2 class="display" style="font-size:24px;font-weight:700;margin:0;">Guía de uso</h2>
+        <button class="btn-linea" id="guiaCerrarX" style="padding:5px 12px;">✕</button>
+      </div>
+      <p style="font-size:13px;color:var(--suave);margin:0 0 18px;">Todo lo que puedes hacer con el recetario, paso a paso.</p>
+
+      ${S("👁️ Modo consulta y ✎ modo edición", "La app arranca en <b>modo consulta</b>: solo se ven los platos, ideal para el día a día. Para añadir o cambiar cosas, pulsa <b>«✎ Modo edición»</b> arriba a la derecha. En consulta no se puede tocar nada por error.")}
+
+      ${S("🔎 Buscar y filtrar", "Usa las pestañas de arriba (Menú del día, Carta, Tapas, Experiencias, Cafetería) y sus apartados para navegar. El <b>buscador</b> encuentra por nombre, ingrediente, alérgeno o sección: escribe «pescado» y salen todos los que lo llevan; «gambas ajo» busca los que tengan ambos. El <b>filtro de alérgenos</b> muestra solo los platos SIN ese alérgeno (útil cuando un cliente pregunta).")}
+
+      ${S("➕ Añadir platos (4 formas)", "En modo edición, pulsa <b>«+ Añadir plato»</b>:<br>• <b>✍️ Crear a mano</b>: rellenas la ficha tú.<br>• <b>📷 Fotografiar</b>: haces una foto a una carta o pizarra y la IA detecta los platos.<br>• <b>📎 Desde archivo</b>: una imagen, un PDF o un Word.<br>• <b>📋 Pegar texto</b>: copias texto de una web o correo y lo pegas.<br>En los tres últimos, revisas los platos detectados antes de guardarlos (corriges nombre, sección, alérgenos y foto).")}
+
+      ${S("📝 La ficha de un plato", "Cada plato tiene: nombre (y nombre en inglés, con botón <b>🌐 Traducir</b> automático), sección, descripción, precio (opcional), <b>ingredientes</b> (sin cantidades, separados por comas) y <b>alérgenos</b>. Al escribir ingredientes, la app te <b>sugiere</b> los alérgenos probables — tú los confirmas. Puedes añadir una <b>foto</b> del plato. Con <b>«Duplicar»</b> creas una variante rápida sin reescribir todo.")}
+
+      ${S("🖨 Menús imprimibles", "Pulsa <b>«🖨 Menús imprimibles»</b> → «+ Nuevo menú». Eliges una <b>plantilla</b> (clásica, hotel bilingüe, pizarra, cafetería en columnas o elegante), pones título, fecha y precios, y marcas los platos de cada apartado (cada apartado muestra solo su sección). Al guardar se ve la vista previa y puedes <b>Imprimir o Guardar como PDF</b>. Con <b>«⧉ Repetir»</b> reutilizas un menú de otro día cambiando solo la fecha y algún plato.")}
+
+      ${S("📋 Cuadro oficial de alérgenos", "Dentro de «Menús imprimibles», el botón <b>«📋 Cuadro oficial de alérgenos»</b> genera la tabla de platos × 14 alérgenos (la de las inspecciones), con la fecha automática. Se imprime en horizontal.")}
+
+      ${S("☁️ Sincronización", "Todos los dispositivos con la app comparten el mismo recetario <b>en tiempo real</b>: si cocina añade un plato, sala lo ve al instante. Funciona también <b>sin internet</b> (se pone al día al recuperar cobertura). El estado se ve en la cabecera: ☁️ sincronizado, 🔒 solo en este dispositivo o ⚠️ sin conexión.")}
+
+      ${S("⇅ Copia de seguridad", "El botón <b>«⇅ Copia»</b> exporta todo el recetario a un archivo (para guardarlo o pasarlo a otro sitio) e importa copias. Con la sincronización activada tus datos ya están a salvo en la nube, pero una copia extra nunca está de más.")}
+
+      ${S("💻 En el ordenador", "La misma app funciona en el PC (navegador), sincronizada con los móviles. Para imprimir menús a doble cara, el PC es lo más cómodo. Recuerda entrar en <b>modo edición</b> también aquí para ver el botón de añadir.")}
+
+      ${S("⚠️ Importante sobre alérgenos", "La detección automática de alérgenos (por ingredientes o por foto) es <b>orientativa</b>. La declaración final debe confirmarla siempre quien conoce la receta real: aceites, fondos, trazas de la freidora, etc. Revisa cada ficha.")}
+
+      <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+        <button class="btn-verde" id="guiaCerrar">Entendido</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById("veloGuia").onclick = cerrarModal;
+  document.getElementById("guiaCerrar").onclick = cerrarModal;
+  document.getElementById("guiaCerrarX").onclick = cerrarModal;
+}
 document.getElementById("btnModo").onclick = () => {
   modo = modo === "consulta" ? "edicion" : "consulta";
   const b = document.getElementById("btnModo");
