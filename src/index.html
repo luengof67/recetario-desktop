@@ -217,7 +217,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v24<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v25<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -751,6 +751,11 @@ function abrirFormulario(id){
           <input class="campo" id="fPrecio" value="${esc(p?.precio || "")}" placeholder="Ej.: 4,50 €">
         </div>
         <div>
+          <label class="fila-check" style="font-weight:600;">
+            <input type="checkbox" id="fPublico" ${p?.publico ? "checked" : ""}>
+            <span>📱 Mostrar este plato en la carta pública (QR de clientes)</span>
+          </label>
+        <div>
           <label class="campo-lbl" for="fIng">Ingredientes * <span style="font-weight:400;color:var(--suave);">(sin cantidades — separa con comas y pulsa Añadir)</span></label>
           <div style="display:flex;gap:8px;">
             <input class="campo" id="fIng" placeholder="Ej.: merluza, harina, ajo, vino blanco, guisantes">
@@ -877,6 +882,7 @@ function abrirFormulario(id){
       subseccion: $("fSub").value,
       descripcion: $("fDesc").value.trim(),
       precio: $("fPrecio").value.trim(),
+      publico: $("fPublico").checked,
       ingredientes, alergenos,
       tieneFoto: !!foto,
     };
@@ -932,6 +938,7 @@ function abrirListaMenus(){
       </div>
       <button class="btn-linea" id="btnCuadro" style="margin-top:12px;width:100%;">📋 Cuadro oficial de alérgenos (imprimible)</button>
       <button class="btn-linea" id="btnListado" style="margin-top:8px;width:100%;">📃 Listado de platos (solo nombres)</button>
+      <button class="btn-linea" id="btnCartaPublica" style="margin-top:8px;width:100%;">📱 Carta pública (QR)</button>
       ${GEMINI_API_KEY ? `<button class="btn-linea" id="btnTraducirTodo" style="margin-top:8px;width:100%;">🌐 Traducir al inglés los platos que falten</button>` : ""}
       ${menus.length > 3 ? `<input class="campo" id="buscarMenu" style="margin-top:10px;" placeholder="🔎 Buscar menú por fecha o título…">` : ""}
       <div id="listaMenus" style="margin-top:10px;">${filas}</div>
@@ -945,6 +952,7 @@ function abrirListaMenus(){
   document.getElementById("btnNuevoMenu").onclick = () => abrirEditorMenu(null);
   document.getElementById("btnCuadro").onclick = abrirCuadro;
   document.getElementById("btnListado").onclick = previsualizarListado;
+  document.getElementById("btnCartaPublica").onclick = abrirGestorCartaPublica;
   const btnTT = document.getElementById("btnTraducirTodo");
   if (btnTT) btnTT.onclick = async () => {
     const faltan = platos.filter(p => !p.nombreEn || !p.nombreEn.trim());
@@ -1520,6 +1528,54 @@ async function abrirCuadro(){
     cerrarModal();
     previsualizarCuadro(nombre, secs);
   };
+}
+
+function abrirGestorCartaPublica(){
+  const capa = document.getElementById("capaModal");
+  const totalPub = platos.filter(p => p.publico).length;
+  const filasSec = SECCIONES.map(s => {
+    const dePlatos = platos.filter(p => SUB_A_PRINCIPAL[p.subseccion]?.id === s.id);
+    if (dePlatos.length === 0) return "";
+    const pub = dePlatos.filter(p => p.publico).length;
+    const todos = pub === dePlatos.length;
+    const ninguno = pub === 0;
+    const estado = todos ? "Todos visibles" : (ninguno ? "Ninguno visible" : pub + " de " + dePlatos.length);
+    return `<div class="fila-menu-guardado">
+      <div style="flex:1;min-width:0;">
+        <div class="display" style="font-size:16px;font-weight:600;">${s.icono} ${esc(s.nombre)}</div>
+        <div style="font-size:12px;color:var(--suave);">${estado} en la carta pública</div>
+      </div>
+      <button class="btn-linea" data-pub-sec="${s.id}" style="padding:6px 12px;">Mostrar todos</button>
+      <button class="btn-linea" data-ocultar-sec="${s.id}" style="padding:6px 12px;">Ocultar todos</button>
+    </div>`;
+  }).join("");
+
+  capa.innerHTML = `<div class="velo" id="veloCP">
+    <div class="modal ancho" onclick="event.stopPropagation()" style="padding:22px 24px 24px;">
+      <h2 class="display" style="font-size:22px;font-weight:700;margin:0;">Carta pública (QR)</h2>
+      <p style="font-size:13px;color:var(--suave);margin:8px 0 14px;">
+        Elige qué platos ven los clientes al escanear el QR. Ahora mismo hay <b>${totalPub} plato(s)</b> visibles.
+        Puedes activar/desactivar secciones enteras aquí, o plato a plato desde su ficha (interruptor «Mostrar en la carta pública»).</p>
+      <div>${filasSec || '<div style="color:var(--suave);font-size:14px;padding:12px 0;">No hay platos en el recetario.</div>'}</div>
+      <div style="background:#EDF0E8;border-radius:10px;padding:12px 14px;font-size:13px;color:var(--tinta);margin-top:16px;">
+        💡 La carta pública se actualiza sola: al marcar platos aquí, aparecen o desaparecen del QR al instante (si ya la has publicado).
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+        <button class="btn-verde" id="cpCerrar">Hecho</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById("veloCP").onclick = cerrarModal;
+  document.getElementById("cpCerrar").onclick = cerrarModal;
+
+  async function cambiarSeccion(secId, valor){
+    platos.forEach(p => { if (SUB_A_PRINCIPAL[p.subseccion]?.id === secId) p.publico = valor; });
+    try { await guardarPlatosStore(); notificar(valor ? "Sección mostrada en la carta" : "Sección ocultada"); }
+    catch { notificar("No se pudo guardar."); }
+    abrirGestorCartaPublica();
+  }
+  capa.querySelectorAll("[data-pub-sec]").forEach(b => b.onclick = () => cambiarSeccion(b.dataset.pubSec, true));
+  capa.querySelectorAll("[data-ocultar-sec]").forEach(b => b.onclick = () => cambiarSeccion(b.dataset.ocultarSec, false));
 }
 
 function previsualizarListado(){
