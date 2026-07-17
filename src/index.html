@@ -217,7 +217,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v25<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v26<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -516,6 +516,15 @@ async function nubeFoto(id, data){
     const ref = nube.f.doc(nube.db, baseNube() + "/fotos/" + id);
     if (data) await nube.f.setDoc(ref, { data, t: Date.now() });
     else await nube.f.deleteDoc(ref);
+  } catch(e){}
+}
+
+/* Subir configuración de la carta pública (logo, nombre) a la nube */
+async function nubeConfigCarta(logo, marca){
+  if (!nube) return;
+  try {
+    await nube.f.setDoc(nube.f.doc(nube.db, baseNube() + "/config/carta"),
+      { logo: logo || "", marca: marca || "", t: Date.now() });
   } catch(e){}
 }
 
@@ -1260,6 +1269,8 @@ async function abrirEditorMenu(id){
         await stSet("config-marca", $("mMarca").value.trim());
         if (logoNuevo && logoNuevo !== "BORRAR") await stSet("config-logo", logoNuevo);
         else if (logoNuevo === "BORRAR") await stDel("config-logo");
+        /* Subir a la nube para la carta pública */
+        nubeConfigCarta(logoNuevo === "BORRAR" ? "" : (logoNuevo || await stGet("config-logo")), $("mMarca").value.trim());
       } catch(e){}
       const existe = menus.some(x => x.id === obj.id);
       menus = existe ? menus.map(x => x.id === obj.id ? obj : x) : [...menus, obj];
@@ -1560,6 +1571,7 @@ function abrirGestorCartaPublica(){
       <div style="background:#EDF0E8;border-radius:10px;padding:12px 14px;font-size:13px;color:var(--tinta);margin-top:16px;">
         💡 La carta pública se actualiza sola: al marcar platos aquí, aparecen o desaparecen del QR al instante (si ya la has publicado).
       </div>
+      <button class="btn-linea" id="cpSincLogo" style="margin-top:10px;width:100%;">🖼 Enviar mi logo a la carta pública</button>
       <div style="display:flex;justify-content:flex-end;margin-top:16px;">
         <button class="btn-verde" id="cpCerrar">Hecho</button>
       </div>
@@ -1567,6 +1579,13 @@ function abrirGestorCartaPublica(){
   </div>`;
   document.getElementById("veloCP").onclick = cerrarModal;
   document.getElementById("cpCerrar").onclick = cerrarModal;
+  document.getElementById("cpSincLogo").onclick = async () => {
+    const logo = await stGet("config-logo");
+    const marca = await stGet("config-marca");
+    if (!logo){ notificar("No hay logo guardado. Ponlo primero en un menú (plantilla hotel)."); return; }
+    nubeConfigCarta(logo, marca || "");
+    notificar("Logo enviado a la carta pública");
+  };
 
   async function cambiarSeccion(secId, valor){
     platos.forEach(p => { if (SUB_A_PRINCIPAL[p.subseccion]?.id === secId) p.publico = valor; });
