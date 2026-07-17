@@ -145,6 +145,16 @@ h2.hh-tras::after{display:none;}
 .pt-nombre{font-size:15.5px;font-weight:700;color:#20291F;}
 .pt-linea{font-size:12.5px;color:#333;font-style:italic;margin-top:1px;}
 .pt-linea b{font-style:normal;}
+/* ── Listado de platos (solo nombres) ── */
+.hoja-listado{font-family:'Inter',Arial,sans-serif;}
+.hoja-listado h2{font-family:'Fraunces',Georgia,serif;font-size:19px;font-weight:700;color:#2F5233;
+  text-align:left;text-transform:none;letter-spacing:0;margin:22px 0 6px;border-bottom:2px solid #2F5233;padding-bottom:5px;}
+.hoja-listado h2::after{display:none;}
+.hoja-listado h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+  color:#66705F;margin:12px 0 4px;}
+.hoja-listado .cuenta{font-weight:400;color:#9aa392;}
+.hoja-listado ul.lista-platos{margin:0 0 8px;padding:0;list-style:none;columns:2;column-gap:28px;}
+.hoja-listado ul.lista-platos li{font-size:14px;padding:2px 0;break-inside:avoid;border-bottom:1px dotted #E4E8DE;}
 /* ── Plantilla PIZARRA ── */
 .hoja-pizarra{background:#20291F !important;color:#F5F6F2 !important;font-family:'Fraunces',Georgia,serif;
   border:none;padding:48px 52px;position:relative;}
@@ -207,7 +217,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v23<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v24<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -291,7 +301,7 @@ const CODIGO_EQUIPO = "jose403060";
    Si se deja en null, el botón de escanear no aparece y todo
    lo demás funciona igual.
    ══════════════════════════════════════════════════════════ */
-const GEMINI_API_KEY_BRUTA = "AQ.Ab8RN6KODoLU7GBgox623zGgI3sEbZiduxgPt8nxFgoIVxaQfw";
+const GEMINI_API_KEY_BRUTA = "AQ.Ab8RN6JA9MogkutyDTtsvKWrNK9CO6nsYYiQv4as2ih1JM0IDA";
 const GEMINI_API_KEY = (GEMINI_API_KEY_BRUTA && !GEMINI_API_KEY_BRUTA.includes("__CLAVE")) ? GEMINI_API_KEY_BRUTA : null;
 const GEMINI_MODELO = "gemini-flash-latest";
 /* Si el modelo principal falla o está saturado, se prueban estos por orden: */
@@ -921,6 +931,7 @@ function abrirListaMenus(){
         <button class="btn-verde" id="btnNuevoMenu">+ Nuevo menú</button>
       </div>
       <button class="btn-linea" id="btnCuadro" style="margin-top:12px;width:100%;">📋 Cuadro oficial de alérgenos (imprimible)</button>
+      <button class="btn-linea" id="btnListado" style="margin-top:8px;width:100%;">📃 Listado de platos (solo nombres)</button>
       ${GEMINI_API_KEY ? `<button class="btn-linea" id="btnTraducirTodo" style="margin-top:8px;width:100%;">🌐 Traducir al inglés los platos que falten</button>` : ""}
       ${menus.length > 3 ? `<input class="campo" id="buscarMenu" style="margin-top:10px;" placeholder="🔎 Buscar menú por fecha o título…">` : ""}
       <div id="listaMenus" style="margin-top:10px;">${filas}</div>
@@ -933,6 +944,7 @@ function abrirListaMenus(){
   document.getElementById("btnCerrarMenus").onclick = cerrarModal;
   document.getElementById("btnNuevoMenu").onclick = () => abrirEditorMenu(null);
   document.getElementById("btnCuadro").onclick = abrirCuadro;
+  document.getElementById("btnListado").onclick = previsualizarListado;
   const btnTT = document.getElementById("btnTraducirTodo");
   if (btnTT) btnTT.onclick = async () => {
     const faltan = platos.filter(p => !p.nombreEn || !p.nombreEn.trim());
@@ -1508,6 +1520,45 @@ async function abrirCuadro(){
     cerrarModal();
     previsualizarCuadro(nombre, secs);
   };
+}
+
+function previsualizarListado(){
+  if (platos.length === 0){ notificar("No hay platos en el recetario."); return; }
+  cerrarModal();
+  let bloques = "";
+  let total = 0;
+  SECCIONES.forEach(s => {
+    const platosSeccion = platos.filter(p => SUB_A_PRINCIPAL[p.subseccion]?.id === s.id);
+    if (platosSeccion.length === 0) return;
+    bloques += `<h2>${s.icono} ${esc(s.nombre)}</h2>`;
+    s.sub.forEach(sub => {
+      const dePlatos = platosSeccion.filter(p => p.subseccion === sub.id)
+        .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+      if (dePlatos.length === 0) return;
+      bloques += `<h3>${esc(sub.nombre)} <span class="cuenta">(${dePlatos.length})</span></h3><ul class="lista-platos">`;
+      dePlatos.forEach(p => { bloques += `<li>${esc(p.nombre)}</li>`; total++; });
+      bloques += `</ul>`;
+    });
+  });
+
+  const hoy = new Date().toLocaleDateString("es-ES", { day:"numeric", month:"long", year:"numeric" });
+  const capa = document.getElementById("capaImpresion");
+  capa.innerHTML = `
+    <div class="barra-impresion">
+      <button class="btn-linea" id="impVolver" style="background:#fff;">← Volver</button>
+      <button class="btn-verde" id="impImprimir">🖨 Imprimir / Guardar PDF</button>
+    </div>
+    <div class="hoja hoja-listado">
+      <div class="cab">
+        <h1 style="font-size:30px;">Listado de platos</h1>
+        <div class="fecha">${total} platos · ${esc(hoy)}</div>
+      </div>
+      ${bloques}
+    </div>`;
+  fijarOrientacion(false);
+  document.body.classList.add("previsualizando");
+  document.getElementById("impVolver").onclick = cerrarPrevisualizacion;
+  document.getElementById("impImprimir").onclick = () => imprimir("Listado de platos");
 }
 
 function previsualizarCuadro(nombre, seccionesSel){
