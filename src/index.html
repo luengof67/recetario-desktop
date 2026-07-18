@@ -47,17 +47,32 @@ input.campo:focus, textarea.campo:focus, select.campo:focus{border-color:var(--v
 .fila-subs{display:flex;gap:8px;overflow-x:auto;padding:8px 0 4px;}
 .fila-filtros{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 6px;}
 .rejilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-top:10px;}
-/* ── Lista de platos compacta (mismo formato que la carta pública) ── */
-.lista-platos-app{display:flex;flex-direction:column;gap:10px;margin-top:10px;max-width:720px;}
-.tarjeta-lista{background:var(--carta);border:1px solid var(--linea);border-radius:14px;overflow:hidden;
-  display:flex;align-items:stretch;cursor:pointer;transition:transform .12s ease, box-shadow .12s ease;}
-.tarjeta-lista:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(32,41,31,.10);}
-.lp-foto-caja{width:104px;flex-shrink:0;background:#EDF0E8;display:flex;align-items:center;justify-content:center;padding:6px;}
-.lp-foto{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:8px;display:block;}
-.lp-foto-caja.lp-sinfoto{font-size:30px;}
-.lp-cuerpo{padding:11px 14px 12px;flex:1;min-width:0;}
-.lp-fila1{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
-.lp-precio{font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:700;color:var(--verde);white-space:nowrap;}
+/* ── Lista de platos estilo carta elegante (a juego con la carta pública) ── */
+.lista-platos-app{display:flex;flex-direction:column;margin-top:10px;max-width:760px;}
+.tarjeta-lista{background:transparent;border:none;border-bottom:1px solid var(--linea);padding:14px 2px;
+  display:flex;align-items:flex-start;gap:14px;cursor:pointer;transition:background .12s ease;}
+.tarjeta-lista:hover{background:#EFF2EC;}
+.tl-texto{flex:1;min-width:0;}
+.tl-nombre{font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:600;letter-spacing:.02em;
+  text-transform:uppercase;display:inline-block;border-bottom:1px solid #C9CEC2;padding-bottom:2px;}
+.tl-en{font-size:12px;color:var(--suave);font-style:italic;margin-top:3px;}
+.tl-desc{font-size:12.5px;color:var(--suave);margin-top:4px;line-height:1.4;}
+.tl-fila-baja{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-top:7px;}
+.tl-alergenos{display:flex;flex-wrap:wrap;gap:4px;}
+.tl-al-icono{width:22px;height:22px;border-radius:50%;background:#EDF0E8;border:1px solid var(--linea);
+  display:inline-flex;align-items:center;justify-content:center;font-size:12px;}
+.tl-precio{font-family:'Fraunces',Georgia,serif;font-size:15px;font-weight:700;color:var(--teja,#B4552D);white-space:nowrap;}
+.tl-foto-mini{width:82px;height:82px;flex-shrink:0;border-radius:8px;background:#1a1a1a;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;}
+.tl-foto-mini img{max-width:100%;max-height:100%;object-fit:contain;}
+.tl-sinfoto-mini{width:82px;height:82px;flex-shrink:0;border-radius:8px;background:#EDF0E8;
+  display:flex;align-items:center;justify-content:center;font-size:28px;}
+/* Plato destacado: foto grande arriba */
+.tarjeta-lista.destacado{flex-direction:column;gap:0;border-bottom:1px solid var(--linea);padding-bottom:16px;}
+.tl-foto-grande{width:100%;height:200px;background:#1a1a1a;border-radius:10px;overflow:hidden;margin-bottom:10px;
+  display:flex;align-items:center;justify-content:center;}
+.tl-foto-grande img{max-width:100%;max-height:100%;object-fit:contain;}
+.tarjeta-lista.destacado .tl-texto{width:100%;}
 @media (prefers-reduced-motion: reduce){.tarjeta-lista{transition:none;}}
 .vacio{padding:60px 20px;text-align:center;color:var(--suave);}
 .velo{position:fixed;inset:0;background:rgba(32,41,31,.55);z-index:50;display:flex;
@@ -82,7 +97,12 @@ details.selector-platos .cuerpo{padding:4px 12px 12px;max-height:260px;overflow-
 .fila-check{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:14px;}
 .fila-check input{width:16px;height:16px;accent-color:var(--verde);}
 .apartado-menu{border:1px solid var(--linea);border-radius:12px;padding:12px;background:#FAFBF8;}
-.fila-menu-guardado{display:flex;align-items:center;gap:10px;padding:12px 4px;border-bottom:1px solid var(--linea);}
+.fila-menu-guardado{padding:14px 4px;border-bottom:1px solid var(--linea);}
+.fmg-info{margin-bottom:10px;}
+.fmg-titulo{font-family:'Fraunces',Georgia,serif;font-size:17px;font-weight:600;line-height:1.2;}
+.fmg-meta{font-size:12.5px;color:var(--suave);margin-top:3px;line-height:1.4;}
+.fmg-botones{display:flex;gap:8px;flex-wrap:wrap;}
+.fmg-botones button{padding:8px 14px;font-size:13px;}
 
 /* ── Hoja imprimible ── */
 #capaImpresion{display:none;}
@@ -229,7 +249,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v27<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v29<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -645,21 +665,29 @@ function renderLista(){
   }
   cont.innerHTML = `<div class="lista-platos-app">` + vis.map(p => {
     const foto = fotos[p.id];
-    const cab = foto
-      ? `<div class="lp-foto-caja"><img src="${foto}" alt="${esc(p.nombre)}" class="lp-foto"></div>`
-      : `<div class="lp-foto-caja lp-sinfoto">${SUB_A_PRINCIPAL[p.subseccion]?.icono || "🍽️"}</div>`;
+    const alergenosMini = (p.alergenos && p.alergenos.length)
+      ? `<div class="tl-alergenos">${p.alergenos.map(a => `<span class="tl-al-icono" title="${esc(AL_MAP[a]?.nombre||"")}">${AL_MAP[a]?.icono||""}</span>`).join("")}</div>`
+      : `<div class="tl-alergenos"><span style="font-size:11px;color:var(--verde);font-weight:600;">✓ Sin alérgenos</span></div>`;
+    const precio = p.precio ? `<div class="tl-precio">${esc(p.precio)}</div>` : "";
+    const bloqueTexto = `<div class="tl-texto">
+        <div class="tl-nombre">${esc(p.nombre)}</div>
+        ${p.nombreEn ? `<div class="tl-en">${esc(p.nombreEn)}</div>` : ""}
+        ${p.descripcion ? `<div class="tl-desc">${esc(p.descripcion)}</div>` : ""}
+        <div class="tl-fila-baja">${alergenosMini}${precio}</div>
+      </div>`;
+
+    if (p.destacado && foto){
+      return `<div class="tarjeta-lista destacado" data-id="${p.id}">
+        <div class="tl-foto-grande"><img src="${foto}" alt="${esc(p.nombre)}"></div>
+        ${bloqueTexto}
+      </div>`;
+    }
+    const mini = foto
+      ? `<div class="tl-foto-mini"><img src="${foto}" alt="${esc(p.nombre)}"></div>`
+      : `<div class="tl-sinfoto-mini">${SUB_A_PRINCIPAL[p.subseccion]?.icono || "🍽️"}</div>`;
     return `<div class="tarjeta-lista" data-id="${p.id}">
-      ${cab}
-      <div class="lp-cuerpo">
-        <div class="lp-fila1">
-          <div style="min-width:0;">
-            <div class="etiqueta-sec">${esc(SUB_A_PRINCIPAL[p.subseccion]?.nombre || "")} · ${esc(NOMBRE_SUB[p.subseccion] || "")}</div>
-            <div class="display" style="font-size:17px;font-weight:600;margin:1px 0 0;">${esc(p.nombre)}</div>
-          </div>
-          ${p.precio ? `<div class="lp-precio">${esc(p.precio)}</div>` : ""}
-        </div>
-        <div class="grupo-chips" style="gap:4px;margin-top:7px;">${chipsAlergenos(p)}</div>
-      </div>
+      ${bloqueTexto}
+      ${mini}
     </div>`;
   }).join("") + `</div>`;
   cont.querySelectorAll(".tarjeta-lista").forEach(t => t.onclick = () => abrirFicha(t.dataset.id));
@@ -780,6 +808,10 @@ function abrirFormulario(id){
           <label class="fila-check" style="font-weight:600;">
             <input type="checkbox" id="fPublico" ${p?.publico ? "checked" : ""}>
             <span>📱 Mostrar este plato en la carta pública (QR de clientes)</span>
+          </label>
+          <label class="fila-check" style="font-weight:600;margin-top:6px;">
+            <input type="checkbox" id="fDestacado" ${p?.destacado ? "checked" : ""}>
+            <span>⭐ Destacar con foto grande (en la carta)</span>
           </label>
         <div>
           <label class="campo-lbl" for="fIng">Ingredientes * <span style="font-weight:400;color:var(--suave);">(sin cantidades — separa con comas y pulsa Añadir)</span></label>
@@ -909,6 +941,7 @@ function abrirFormulario(id){
       descripcion: $("fDesc").value.trim(),
       precio: $("fPrecio").value.trim(),
       publico: $("fPublico").checked,
+      destacado: $("fDestacado").checked,
       ingredientes, alergenos,
       tieneFoto: !!foto,
     };
@@ -946,14 +979,16 @@ function abrirListaMenus(){
   const filas = menus.length === 0
     ? `<div style="padding:24px 4px;color:var(--suave);font-size:14px;">Aún no hay menús guardados. Crea el primero: elige un título, un precio y los platos de cada apartado.</div>`
     : ordenados.map(m => `<div class="fila-menu-guardado">
-        <div style="flex:1;min-width:0;">
-          <div class="display" style="font-size:16px;font-weight:600;">${esc(m.titulo)}</div>
-          <div style="font-size:12px;color:var(--suave);">${m.fecha ? "📅 " + esc(m.fecha) + " · " : ""}${m.apartados.reduce((n,a)=>n+a.platoIds.length,0)} platos${m.precio ? " · " + esc(m.precio) : ""}</div>
+        <div class="fmg-info">
+          <div class="fmg-titulo">${esc(m.titulo)}</div>
+          <div class="fmg-meta">${m.fecha ? "📅 " + esc(m.fecha) + " · " : ""}${m.apartados.reduce((n,a)=>n+a.platoIds.length,0)} platos${m.precio ? " · " + esc(m.precio) : ""}</div>
         </div>
-        <button class="btn-linea" data-ver="${m.id}" style="padding:6px 12px;">🖨 Ver</button>
-        <button class="btn-linea" data-edit="${m.id}" style="padding:6px 12px;">Editar</button>
-        <button class="btn-linea" data-dup="${m.id}" style="padding:6px 12px;" title="Crear uno nuevo a partir de este">⧉ Repetir</button>
-        <button class="btn-linea peligro" data-del="${m.id}" style="padding:6px 12px;">✕</button>
+        <div class="fmg-botones">
+          <button class="btn-linea" data-ver="${m.id}">🖨 Ver</button>
+          <button class="btn-linea" data-edit="${m.id}">Editar</button>
+          <button class="btn-linea" data-dup="${m.id}" title="Crear uno nuevo a partir de este">⧉ Repetir</button>
+          <button class="btn-linea peligro" data-del="${m.id}">✕</button>
+        </div>
       </div>`).join("");
 
   capa.innerHTML = `<div class="velo" id="veloMenus">
@@ -1569,12 +1604,14 @@ function abrirGestorCartaPublica(){
     const ninguno = pub === 0;
     const estado = todos ? "Todos visibles" : (ninguno ? "Ninguno visible" : pub + " de " + dePlatos.length);
     return `<div class="fila-menu-guardado">
-      <div style="flex:1;min-width:0;">
-        <div class="display" style="font-size:16px;font-weight:600;">${s.icono} ${esc(s.nombre)}</div>
-        <div style="font-size:12px;color:var(--suave);">${estado} en la carta pública</div>
+      <div class="fmg-info">
+        <div class="fmg-titulo">${s.icono} ${esc(s.nombre)}</div>
+        <div class="fmg-meta">${estado} en la carta pública</div>
       </div>
-      <button class="btn-linea" data-pub-sec="${s.id}" style="padding:6px 12px;">Mostrar todos</button>
-      <button class="btn-linea" data-ocultar-sec="${s.id}" style="padding:6px 12px;">Ocultar todos</button>
+      <div class="fmg-botones">
+        <button class="btn-linea" data-pub-sec="${s.id}">Mostrar todos</button>
+        <button class="btn-linea" data-ocultar-sec="${s.id}">Ocultar todos</button>
+      </div>
     </div>`;
   }).join("");
 
