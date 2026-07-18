@@ -249,7 +249,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v31<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v32<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -702,7 +702,7 @@ function abrirFicha(id){
   const capa = document.getElementById("capaModal");
   capa.innerHTML = `<div class="velo" id="velo">
     <div class="modal" onclick="event.stopPropagation()">
-      ${foto ? `<div style="width:100%;height:190px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img src="${foto}" alt="${esc(p.nombre)}" style="max-width:100%;max-height:100%;object-fit:contain;display:block;"></div>` : ""}
+      ${foto ? `<div style="width:100%;height:220px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img src="${foto}" alt="${esc(p.nombre)}" style="max-width:100%;max-height:100%;object-fit:contain;display:block;"></div>` : ""}
       <div style="padding:20px 24px 24px;">
         <div class="etiqueta-sec">${esc(SUB_A_PRINCIPAL[p.subseccion]?.nombre || "")} · ${esc(NOMBRE_SUB[p.subseccion] || "")}</div>
         <h2 class="display" style="font-size:26px;font-weight:700;margin:4px 0 4px;">${esc(p.nombre)}</h2>
