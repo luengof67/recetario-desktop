@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Recetario de cocina · Platos, alérgenos y menús</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Montserrat:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 :root{
   --papel:#F5F6F2; --tinta:#20291F; --verde:#2F5233; --verde-osc:#243F28;
   --azafran:#DDA321; --linea:#D8DCD2; --carta:#FFFFFF; --suave:#66705F;
@@ -53,15 +53,15 @@ input.campo:focus, textarea.campo:focus, select.campo:focus{border-color:var(--v
   display:flex;align-items:flex-start;gap:14px;cursor:pointer;transition:background .12s ease;}
 .tarjeta-lista:hover{background:#EFF2EC;}
 .tl-texto{flex:1;min-width:0;}
-.tl-nombre{font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:600;letter-spacing:.02em;
-  text-transform:uppercase;display:inline-block;border-bottom:1px solid #C9CEC2;padding-bottom:2px;}
-.tl-en{font-size:12px;color:var(--suave);font-style:italic;margin-top:3px;}
-.tl-desc{font-size:12.5px;color:var(--suave);margin-top:4px;line-height:1.4;}
+.tl-nombre{font-family:'Montserrat',system-ui,sans-serif;font-size:14px;font-weight:600;letter-spacing:.03em;
+  text-transform:uppercase;display:inline-block;border-bottom:1.5px solid #B4272D;padding-bottom:2px;line-height:1.3;color:#2a2a2a;}
+.tl-en{font-size:11.5px;color:#444;font-style:normal;margin-top:3px;}
+.tl-desc{font-size:11.5px;color:#666;margin-top:4px;line-height:1.4;}
 .tl-fila-baja{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-top:7px;}
 .tl-alergenos{display:flex;flex-wrap:wrap;gap:4px;}
-.tl-al-icono{width:22px;height:22px;border-radius:50%;background:#EDF0E8;border:1px solid var(--linea);
-  display:inline-flex;align-items:center;justify-content:center;font-size:12px;}
-.tl-precio{font-family:'Fraunces',Georgia,serif;font-size:15px;font-weight:700;color:var(--teja,#B4552D);white-space:nowrap;}
+.tl-al-icono{width:27px;height:27px;border-radius:50%;background:#F5F0E6;border:1.5px solid #C89A5B;
+  display:inline-flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 1px 2px rgba(0,0,0,.08);}
+.tl-precio{font-family:'Montserrat',system-ui,sans-serif;font-size:13px;font-weight:600;color:var(--teja,#B4552D);white-space:nowrap;}
 .tl-foto-mini{width:82px;height:82px;flex-shrink:0;border-radius:8px;background:#1a1a1a;overflow:hidden;
   display:flex;align-items:center;justify-content:center;}
 .tl-foto-mini img{max-width:100%;max-height:100%;object-fit:contain;}
@@ -79,7 +79,7 @@ input.campo:focus, textarea.campo:focus, select.campo:focus{border-color:var(--v
   align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;}
 .modal{background:#fff;border-radius:16px;max-width:560px;width:100%;margin:20px 0;overflow:hidden;}
 .modal.ancho{max-width:640px;}
-.etiqueta-sec{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--suave);font-weight:600;}
+.etiqueta-sec{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#1E3A24;font-weight:600;}
 .titulo-bloque{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--verde);margin-bottom:8px;}
 .grupo-chips{display:flex;flex-wrap:wrap;gap:6px;}
 label.campo-lbl{font-size:13px;font-weight:600;display:block;margin-bottom:5px;}
@@ -249,7 +249,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v29<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v30<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
