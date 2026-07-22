@@ -249,7 +249,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v33<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v34<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -353,7 +353,8 @@ const SECCIONES = [
     {id:"sandwiches",nombre:"Sándwiches"},{id:"hamburguesas",nombre:"Hamburguesas"},{id:"tostas",nombre:"Tostas"},
     {id:"bocadillos",nombre:"Bocadillos"},{id:"pizzas",nombre:"Pizzas"},{id:"bowls",nombre:"Bowls"},
     {id:"combinados",nombre:"Platos combinados"},{id:"raciones",nombre:"Otras raciones"},
-    {id:"pescados_cafe",nombre:"Pescados"},{id:"carnes_cafe",nombre:"Carnes"},{id:"postres_cafe",nombre:"Postres"}]},
+    {id:"pescados_cafe",nombre:"Pescados"},{id:"carnes_cafe",nombre:"Carnes"},
+    {id:"infantil",nombre:"Menú infantil"},{id:"postres_cafe",nombre:"Postres"}]},
 ];
 const SUB_A_PRINCIPAL = {}, NOMBRE_SUB = {};
 SECCIONES.forEach(s => s.sub.forEach(sub => { SUB_A_PRINCIPAL[sub.id]=s; NOMBRE_SUB[sub.id]=sub.nombre; }));
