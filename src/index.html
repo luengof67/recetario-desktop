@@ -249,7 +249,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v34<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v36<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -417,7 +417,24 @@ function sugerirAlergenos(ings){
 let platos = [], fotos = {}, menus = [], modo = "consulta";
 let seccion = "todas", subseccion = "todas", busqueda = "", filtroAl = "";
 
+/* Normaliza un nombre para comparar duplicados: sin acentos, sin signos,
+   sin espacios de más y sin el "(copia)" que añade el botón Duplicar. */
+function normalizarNombre(s){
+  return String(s ?? "").toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/\(copia\)/g, " ")
+    .replace(/[^a-z0-9ñ ]/g, " ")
+    .replace(/\s+/g, " ").trim();
+}
+
 function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* Nombre de plato para los menús impresos: cada palabra con mayúscula inicial
+   ("PAELLA MIXTA" o "paella mixta" → "Paella Mixta"). Solo afecta a la impresión. */
+function tituloPlato(s){
+  return String(s ?? "").toLowerCase()
+    .replace(/(^|[\s(\[«"'\-–—/.])([a-záéíóúüñç])/g, (m, sep, letra) => sep + letra.toUpperCase());
+}
 
 /* ── Almacenamiento universal ──
    Dentro de Claude usa window.storage; en la app Android (Capacitor)
@@ -935,6 +952,13 @@ function abrirFormulario(id){
     if ($("fIng").value.trim()) agregarIngredientes();
     if (!nombre){ mostrarError("El plato necesita un nombre."); return; }
     if (ingredientes.length === 0){ mostrarError("Añade al menos un ingrediente."); return; }
+    /* Aviso de plato repetido (compara ignorando mayúsculas, acentos y signos) */
+    const idActual = p?.id || null;
+    const gemelo = platos.find(x => x.id !== idActual && normalizarNombre(x.nombre) === normalizarNombre(nombre));
+    if (gemelo){
+      const donde = (SUB_A_PRINCIPAL[gemelo.subseccion]?.nombre || "") + " · " + (NOMBRE_SUB[gemelo.subseccion] || "");
+      if (!confirm("⚠️ Ya existe un plato con ese nombre:\n\n« " + gemelo.nombre + " »\nen " + donde + "\n\n¿Quieres guardarlo igualmente?")) return;
+    }
     mostrarError("");
     $("fGuardar").disabled = true; $("fGuardar").textContent = "Guardando…";
     const obj = {
@@ -1003,6 +1027,7 @@ function abrirListaMenus(){
       </div>
       <button class="btn-linea" id="btnCuadro" style="margin-top:12px;width:100%;">📋 Cuadro oficial de alérgenos (imprimible)</button>
       <button class="btn-linea" id="btnListado" style="margin-top:8px;width:100%;">📃 Listado de platos (solo nombres)</button>
+      <button class="btn-linea" id="btnRepetidos" style="margin-top:8px;width:100%;">🔁 Buscar platos repetidos</button>
       <button class="btn-linea" id="btnCartaPublica" style="margin-top:8px;width:100%;">📱 Carta pública (QR)</button>
       ${GEMINI_API_KEY ? `<button class="btn-linea" id="btnTraducirTodo" style="margin-top:8px;width:100%;">🌐 Traducir al inglés los platos que falten</button>` : ""}
       ${menus.length > 3 ? `<input class="campo" id="buscarMenu" style="margin-top:10px;" placeholder="🔎 Buscar menú por fecha o título…">` : ""}
@@ -1017,6 +1042,7 @@ function abrirListaMenus(){
   document.getElementById("btnNuevoMenu").onclick = () => abrirEditorMenu(null);
   document.getElementById("btnCuadro").onclick = abrirCuadro;
   document.getElementById("btnListado").onclick = previsualizarListado;
+  document.getElementById("btnRepetidos").onclick = abrirRepetidos;
   document.getElementById("btnCartaPublica").onclick = abrirGestorCartaPublica;
   const btnTT = document.getElementById("btnTraducirTodo");
   if (btnTT) btnTT.onclick = async () => {
@@ -1367,7 +1393,7 @@ async function previsualizarMenu(id){
         if (!p) return "";
         const nums = numerosAlergenos(p);
         return `<div class="ph">
-          <div class="ph-nombre">${esc(p.nombre)}${nums ? `<sup>${nums}</sup>` : ""}</div>
+          <div class="ph-nombre">${esc(tituloPlato(p.nombre))}${nums ? `<sup>${nums}</sup>` : ""}</div>
           ${p.nombreEn ? `<div class="ph-en">${esc(p.nombreEn)}</div>` : (p.descripcion ? `<div class="ph-en">${esc(p.descripcion)}</div>` : "")}
         </div>`;
       }).join("");
@@ -1393,7 +1419,7 @@ async function previsualizarMenu(id){
           if (!p) return "";
           const nums = numerosAlergenos(p);
           return `<div class="pt">
-            <div class="pt-nombre">${esc(p.nombre)}</div>
+            <div class="pt-nombre">${esc(tituloPlato(p.nombre))}</div>
             <div class="pt-linea"><b>Ingredientes:</b> ${esc(p.ingredientes.join(", "))}</div>
             <div class="pt-linea"><b>Alérgenos:</b> ${nums || "—"}</div>
           </div>`;
@@ -1441,7 +1467,7 @@ async function previsualizarMenu(id){
         p.alergenos.forEach(al => usados.add(al));
         const nums = p.alergenos.map(al => AL_MAP[al]?.icono || "").join("");
         return `<div class="col-linea">
-            <span class="col-nombre">${esc(p.nombre)}</span>
+            <span class="col-nombre">${esc(tituloPlato(p.nombre))}</span>
             ${nums ? `<span class="col-al">${nums}</span>` : ""}
             <span class="col-puntos"></span>
             <span class="col-precio">${esc(p.precio || "")}</span>
@@ -1478,14 +1504,14 @@ async function previsualizarMenu(id){
         const iconos = p.alergenos.map(al => AL_MAP[al]?.icono || "").join(" ");
         if (m.plantilla === "elegante"){
           return `<div class="eleg-plato">
-            <div class="eleg-nombre">${esc(p.nombre)}</div>
+            <div class="eleg-nombre">${esc(tituloPlato(p.nombre))}</div>
             ${p.descripcion ? `<div class="eleg-desc">${esc(p.descripcion)}</div>` : ""}
             ${iconos ? `<div class="eleg-al">${iconos}</div>` : ""}
           </div>`;
         }
         return `<div class="plato-linea">
           <div>
-            <div class="plato-nombre">${esc(p.nombre)}</div>
+            <div class="plato-nombre">${esc(tituloPlato(p.nombre))}</div>
             ${p.descripcion ? `<div class="plato-desc">${esc(p.descripcion)}</div>` : ""}
           </div>
           <div class="plato-al">${iconos}</div>
@@ -1655,6 +1681,66 @@ function abrirGestorCartaPublica(){
   capa.querySelectorAll("[data-ocultar-sec]").forEach(b => b.onclick = () => cambiarSeccion(b.dataset.ocultarSec, false));
 }
 
+function abrirRepetidos(){
+  /* Agrupar platos por nombre normalizado y quedarnos con los grupos de 2 o más */
+  const grupos = {};
+  platos.forEach(p => {
+    const clave = normalizarNombre(p.nombre);
+    if (!clave) return;
+    (grupos[clave] = grupos[clave] || []).push(p);
+  });
+  const repetidos = Object.values(grupos).filter(g => g.length > 1)
+    .sort((a, b) => a[0].nombre.localeCompare(b[0].nombre, "es"));
+
+  const cuerpo = repetidos.length === 0
+    ? `<div style="text-align:center;padding:30px 10px;">
+         <div style="font-size:34px;">✅</div>
+         <div class="display" style="font-size:18px;font-weight:600;margin-top:8px;">No hay platos repetidos</div>
+         <div style="font-size:13px;color:var(--suave);margin-top:6px;">Se han revisado los ${platos.length} platos del recetario.</div>
+       </div>`
+    : repetidos.map(g => `<div class="fila-menu-guardado">
+        <div class="fmg-info">
+          <div class="fmg-titulo">${esc(g[0].nombre)} <span style="color:#B4272D;font-weight:600;">×${g.length}</span></div>
+          <div class="fmg-meta">${g.map(p => (SUB_A_PRINCIPAL[p.subseccion]?.nombre || "") + " · " + (NOMBRE_SUB[p.subseccion] || "")).map(t => esc(t)).join("<br>")}</div>
+        </div>
+        <div class="fmg-botones">
+          ${g.map((p, i) => `<button class="btn-linea" data-rep-ver="${p.id}">Ver ${i + 1}</button>`).join("")}
+          ${modo === "edicion" ? g.slice(1).map((p, i) => `<button class="btn-linea peligro" data-rep-del="${p.id}">Eliminar ${i + 2}</button>`).join("") : ""}
+        </div>
+      </div>`).join("");
+
+  const capa = document.getElementById("capaModal");
+  capa.innerHTML = `<div class="velo" id="veloRep">
+    <div class="modal ancho" onclick="event.stopPropagation()" style="padding:22px 24px 24px;">
+      <h2 class="display" style="font-size:22px;font-weight:700;margin:0;">Platos repetidos</h2>
+      <p style="font-size:13px;color:var(--suave);margin:8px 0 14px;">
+        Compara los nombres sin tener en cuenta mayúsculas, acentos ni signos.
+        ${repetidos.length ? "Revisa cada grupo y elimina el que sobre." : ""}
+        ${repetidos.length && modo !== "edicion" ? "<br><b>Entra en modo edición para poder eliminarlos.</b>" : ""}</p>
+      <div>${cuerpo}</div>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+        <button class="btn-verde" id="repCerrar">Hecho</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById("veloRep").onclick = cerrarModal;
+  document.getElementById("repCerrar").onclick = cerrarModal;
+  capa.querySelectorAll("[data-rep-ver]").forEach(b => b.onclick = () => { cerrarModal(); abrirFicha(b.dataset.repVer); });
+  capa.querySelectorAll("[data-rep-del]").forEach(b => b.onclick = async () => {
+    const p = platos.find(x => x.id === b.dataset.repDel); if (!p) return;
+    if (!confirm("¿Eliminar « " + p.nombre + " » de forma permanente?")) return;
+    try {
+      platos = platos.filter(x => x.id !== p.id);
+      await guardarPlatosStore();
+      await borrarFotoStore(p.id);
+      delete fotos[p.id];
+      render();
+      notificar("Plato eliminado");
+      abrirRepetidos(); /* refrescar la lista */
+    } catch { notificar("No se pudo eliminar."); }
+  });
+}
+
 function previsualizarListado(){
   if (platos.length === 0){ notificar("No hay platos en el recetario."); return; }
   cerrarModal();
@@ -1669,7 +1755,7 @@ function previsualizarListado(){
         .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
       if (dePlatos.length === 0) return;
       bloques += `<h3>${esc(sub.nombre)} <span class="cuenta">(${dePlatos.length})</span></h3><ul class="lista-platos">`;
-      dePlatos.forEach(p => { bloques += `<li>${esc(p.nombre)}</li>`; total++; });
+      dePlatos.forEach(p => { bloques += `<li>${esc(tituloPlato(p.nombre))}</li>`; total++; });
       bloques += `</ul>`;
     });
   });
@@ -1713,7 +1799,7 @@ function previsualizarCuadro(nombre, seccionesSel){
       filas += `<tr class="fila-sub"><td colspan="15">${esc(sub.nombre)}</td></tr>`;
       dePlatos.forEach(p => {
         filas += `<tr>
-          <td class="nombre-plato">${esc(p.nombre)}</td>
+          <td class="nombre-plato">${esc(tituloPlato(p.nombre))}</td>
           ${ALERGENOS.map(a => `<td class="celda">${p.alergenos.includes(a.id) ? "●" : ""}</td>`).join("")}
         </tr>`;
       });
