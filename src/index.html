@@ -249,7 +249,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v36<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v37<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -1265,7 +1265,8 @@ async function abrirEditorMenu(id){
       const grupos = SECCIONES.map(s => {
         const opciones = s.sub.map(sub => {
           if (filtro !== "todas" && filtro !== sub.id) return "";
-          const dePlatos = platos.filter(p => p.subseccion === sub.id);
+          const dePlatos = platos.filter(p => p.subseccion === sub.id)
+            .sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" }));
           if (dePlatos.length === 0) return "";
           return `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--suave);margin:8px 0 2px;">${esc(s.nombre)} · ${esc(sub.nombre)}</div>` +
             dePlatos.map(p => `<label class="fila-check">
@@ -1308,15 +1309,19 @@ async function abrirEditorMenu(id){
       b.onclick = () => { apartados.splice(Number(b.dataset.borrarAp), 1); pintarApartados(); });
     $("mApartados").querySelectorAll("input[type=checkbox]").forEach(ch =>
       ch.onchange = () => {
-        const ap = apartados[Number(ch.dataset.ap)];
+        const i = Number(ch.dataset.ap);
+        const ap = apartados[i];
         if (ch.checked) ap.platoIds.push(ch.dataset.plato);
         else ap.platoIds = ap.platoIds.filter(x => x !== ch.dataset.plato);
+        /* Actualizar solo el resumen del apartado, SIN redibujar la lista
+           (así no se pierde el scroll ni salta arriba) */
         const det = ch.closest("details");
-        const abierto = det?.open;
-        pintarApartados();
-        if (abierto){
-          const nuevoDet = $("mApartados").querySelectorAll("details")[Number(ch.dataset.ap)];
-          if (nuevoDet) nuevoDet.open = true;
+        const resumen = det?.querySelector("summary");
+        if (resumen){
+          const seleccionados = ap.platoIds.map(pid => platos.find(p => p.id === pid)).filter(Boolean);
+          resumen.textContent = seleccionados.length === 0
+            ? "Elegir platos…"
+            : seleccionados.length + " plato(s): " + seleccionados.map(p => p.nombre).join(", ");
         }
       });
   }
