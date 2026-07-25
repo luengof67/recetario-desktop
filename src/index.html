@@ -112,6 +112,7 @@ body.previsualizando #capaImpresion{display:block;position:fixed;inset:0;backgro
 .hoja{max-width:760px;margin:0 auto 40px;background:#fff;color:#20291F;padding:56px 60px;min-height:1000px;
   box-shadow:0 10px 40px rgba(0,0,0,.35);}
 .hoja .cab{text-align:center;border-bottom:2px solid #2F5233;padding-bottom:18px;}
+.cab-logo{max-height:88px;max-width:300px;object-fit:contain;display:block;margin:0 auto 12px;}
 .hoja .resto{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#66705F;font-weight:600;}
 .hoja h1{font-family:'Fraunces',Georgia,serif;font-size:38px;font-weight:700;margin:6px 0 2px;color:#20291F;}
 .hoja .fecha{font-size:13px;color:#66705F;}
@@ -143,7 +144,7 @@ body.previsualizando #capaImpresion{display:block;position:fixed;inset:0;backgro
 /* ── Plantilla hotel bilingüe ── */
 .hoja-hotel{font-family:'Inter',Arial,sans-serif;}
 .hh-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
-.hh-logo{max-height:64px;max-width:230px;object-fit:contain;}
+.hh-logo{max-height:92px;max-width:300px;object-fit:contain;}
 .hh-nombre-resto{font-size:22px;font-weight:700;color:#20291F;}
 .hh-marca{font-size:15px;color:#20291F;font-weight:600;margin-top:6px;}
 .hh-linea-titulo{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:20px;flex-wrap:wrap;}
@@ -191,6 +192,7 @@ h2.hh-tras::after{display:none;}
 .hoja-pizarra{background:#20291F !important;color:#F5F6F2 !important;font-family:'Fraunces',Georgia,serif;
   border:none;padding:48px 52px;position:relative;}
 .hoja-pizarra .cab{border-bottom:2px dashed #6b7a63;padding-bottom:16px;}
+.hoja-pizarra .cab-logo{background:#fff;border-radius:8px;padding:6px 10px;}
 .hoja-pizarra h1{color:#fff !important;font-size:40px;}
 .hoja-pizarra .resto, .hoja-pizarra .fecha{color:#c9d2c0 !important;}
 .hoja-pizarra .precio{color:#DDA321 !important;}
@@ -249,7 +251,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v37<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v39<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -349,6 +351,8 @@ const SECCIONES = [
     {id:"tapas_barra",nombre:"Tapas de barra"},{id:"tapas_esp",nombre:"Tapas especiales"}]},
   { id:"experiencias", nombre:"Experiencias", icono:"✨", sub:[
     {id:"menus_esp",nombre:"Menús especiales"},{id:"catas",nombre:"Catas maridadas"},{id:"cocteles",nombre:"Cócteles"}]},
+  { id:"eventos", nombre:"Eventos", icono:"🎉", sub:[
+    {id:"menus_grupo",nombre:"Menús de grupo"},{id:"cocteles_evento",nombre:"Cócteles"}]},
   { id:"cafeteria", nombre:"Cafetería", icono:"☕", sub:[
     {id:"sandwiches",nombre:"Sándwiches"},{id:"hamburguesas",nombre:"Hamburguesas"},{id:"tostas",nombre:"Tostas"},
     {id:"bocadillos",nombre:"Bocadillos"},{id:"pizzas",nombre:"Pizzas"},{id:"bowls",nombre:"Bowls"},
@@ -1379,6 +1383,7 @@ async function abrirEditorMenu(id){
 /* ── Vista previa e impresión ── */
 async function previsualizarMenu(id){
   const m = menus.find(x => x.id === id); if (!m) return;
+  const logoMenu = (await stGet("config-logo")) || null;
 
   const capa = document.getElementById("capaImpresion");
   const barra = `
@@ -1485,6 +1490,7 @@ async function previsualizarMenu(id){
     capa.innerHTML = barra + `
     <div class="hoja hoja-col">
       <div class="cab">
+        ${logoMenu ? `<img class="cab-logo" src="${logoMenu}" alt="Logo">` : ""}
         ${m.subtitulo ? `<div class="resto">${esc(m.subtitulo)}</div>` : ""}
         <h1>${esc(m.titulo)}</h1>
         ${m.fecha ? `<div class="fecha">${esc(m.fecha)}</div>` : ""}
@@ -1534,6 +1540,7 @@ async function previsualizarMenu(id){
     capa.innerHTML = barra + `
     <div class="hoja ${claseHoja}">
       <div class="cab">
+        ${logoMenu ? `<img class="cab-logo" src="${logoMenu}" alt="Logo">` : ""}
         ${m.subtitulo ? `<div class="resto">${esc(m.subtitulo)}</div>` : ""}
         <h1>${esc(m.titulo)}</h1>
         ${m.fecha ? `<div class="fecha">${esc(m.fecha)}</div>` : ""}
