@@ -188,6 +188,18 @@ h2.hh-tras::after{display:none;}
 .hoja-listado .cuenta{font-weight:400;color:#9aa392;}
 .hoja-listado ul.lista-platos{margin:0 0 8px;padding:0;list-style:none;columns:2;column-gap:28px;}
 .hoja-listado ul.lista-platos li{font-size:14px;padding:2px 0;break-inside:avoid;border-bottom:1px dotted #E4E8DE;}
+/* ── Lista de la compra ── */
+.hoja-compra{font-family:'Inter',Arial,sans-serif;}
+.tabla-compra{width:100%;border-collapse:collapse;margin-top:18px;}
+.tabla-compra th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#66705F;text-align:left;
+  padding:6px 8px;border-bottom:2px solid #2F5233;}
+.tabla-compra td{padding:0;border-bottom:1px solid #E4E8DE;}
+.tabla-compra .lc-check{width:34px;text-align:center;}
+.tabla-compra td.lc-check::before{content:"";display:inline-block;width:15px;height:15px;border:1.5px solid #9aa392;
+  border-radius:3px;margin-top:7px;}
+.tabla-compra .lc-ing{font-size:14px;padding:7px 8px;}
+.tabla-compra .lc-cant{width:34%;border-left:1px solid #E4E8DE;}
+.tabla-compra tbody tr{break-inside:avoid;}
 /* ── Plantilla PIZARRA ── */
 .hoja-pizarra{background:#20291F !important;color:#F5F6F2 !important;font-family:'Fraunces',Georgia,serif;
   border:none;padding:48px 52px;position:relative;}
@@ -251,7 +263,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v39<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v40<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -1032,6 +1044,7 @@ function abrirListaMenus(){
       <button class="btn-linea" id="btnCuadro" style="margin-top:12px;width:100%;">📋 Cuadro oficial de alérgenos (imprimible)</button>
       <button class="btn-linea" id="btnListado" style="margin-top:8px;width:100%;">📃 Listado de platos (solo nombres)</button>
       <button class="btn-linea" id="btnRepetidos" style="margin-top:8px;width:100%;">🔁 Buscar platos repetidos</button>
+      <button class="btn-linea" id="btnCompra" style="margin-top:8px;width:100%;">🛒 Lista de la compra (de varios menús)</button>
       <button class="btn-linea" id="btnCartaPublica" style="margin-top:8px;width:100%;">📱 Carta pública (QR)</button>
       ${GEMINI_API_KEY ? `<button class="btn-linea" id="btnTraducirTodo" style="margin-top:8px;width:100%;">🌐 Traducir al inglés los platos que falten</button>` : ""}
       ${menus.length > 3 ? `<input class="campo" id="buscarMenu" style="margin-top:10px;" placeholder="🔎 Buscar menú por fecha o título…">` : ""}
@@ -1047,6 +1060,7 @@ function abrirListaMenus(){
   document.getElementById("btnCuadro").onclick = abrirCuadro;
   document.getElementById("btnListado").onclick = previsualizarListado;
   document.getElementById("btnRepetidos").onclick = abrirRepetidos;
+  document.getElementById("btnCompra").onclick = abrirListaCompra;
   document.getElementById("btnCartaPublica").onclick = abrirGestorCartaPublica;
   const btnTT = document.getElementById("btnTraducirTodo");
   if (btnTT) btnTT.onclick = async () => {
@@ -1691,6 +1705,99 @@ function abrirGestorCartaPublica(){
   }
   capa.querySelectorAll("[data-pub-sec]").forEach(b => b.onclick = () => cambiarSeccion(b.dataset.pubSec, true));
   capa.querySelectorAll("[data-ocultar-sec]").forEach(b => b.onclick = () => cambiarSeccion(b.dataset.ocultarSec, false));
+}
+
+function abrirListaCompra(){
+  if (menus.length === 0){ notificar("Primero crea algún menú."); return; }
+  const ordenados = [...menus].sort((a, b) => (b.creado || 0) - (a.creado || 0));
+  const seleccion = new Set();
+
+  const capa = document.getElementById("capaModal");
+  function pintar(){
+    capa.innerHTML = `<div class="velo" id="veloLC">
+      <div class="modal ancho" onclick="event.stopPropagation()" style="padding:22px 24px 24px;">
+        <h2 class="display" style="font-size:22px;font-weight:700;margin:0;">Lista de la compra</h2>
+        <p style="font-size:13px;color:var(--suave);margin:8px 0 14px;">Marca los menús que quieres incluir. Se juntarán todos sus ingredientes, sin repetir, en orden alfabético.</p>
+        <div style="display:flex;flex-direction:column;gap:2px;max-height:46vh;overflow-y:auto;">
+          ${ordenados.map(m => `<label class="fila-check" style="padding:10px 4px;border-bottom:1px solid var(--linea);">
+            <input type="checkbox" data-m="${m.id}" ${seleccion.has(m.id) ? "checked" : ""}>
+            <span style="flex:1;">
+              <span style="font-weight:600;">${esc(m.titulo)}</span>
+              <span style="font-size:12px;color:var(--suave);"><br>${m.fecha ? esc(m.fecha) + " · " : ""}${m.apartados.reduce((n,a)=>n+a.platoIds.length,0)} platos</span>
+            </span>
+          </label>`).join("")}
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap;">
+          <button class="btn-linea" id="lcCancelar">Cancelar</button>
+          <button class="btn-verde" id="lcGenerar">Generar lista (${seleccion.size})</button>
+        </div>
+      </div>
+    </div>`;
+    document.getElementById("veloLC").onclick = cerrarModal;
+    document.getElementById("lcCancelar").onclick = cerrarModal;
+    capa.querySelectorAll("input[data-m]").forEach(ch => ch.onchange = () => {
+      if (ch.checked) seleccion.add(ch.dataset.m); else seleccion.delete(ch.dataset.m);
+      document.getElementById("lcGenerar").textContent = "Generar lista (" + seleccion.size + ")";
+    });
+    document.getElementById("lcGenerar").onclick = () => {
+      if (seleccion.size === 0){ notificar("Marca al menos un menú."); return; }
+      generarListaCompra([...seleccion]);
+    };
+  }
+  pintar();
+}
+
+function generarListaCompra(menuIds){
+  const menusSel = menus.filter(m => menuIds.includes(m.id));
+  /* Recoger los ids de platos de los menús elegidos */
+  const platoIds = new Set();
+  menusSel.forEach(m => m.apartados.forEach(a => a.platoIds.forEach(pid => platoIds.add(pid))));
+  /* Juntar ingredientes sin repetir (normalizando para no duplicar por may/acentos) */
+  const vistos = new Map(); /* clave normalizada -> texto a mostrar */
+  platoIds.forEach(pid => {
+    const p = platos.find(x => x.id === pid);
+    if (!p) return;
+    (p.ingredientes || []).forEach(ing => {
+      const txt = String(ing).trim();
+      if (!txt) return;
+      const clave = txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+      if (!vistos.has(clave)) vistos.set(clave, txt.charAt(0).toUpperCase() + txt.slice(1));
+    });
+  });
+  const ingredientes = [...vistos.values()].sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }));
+
+  if (ingredientes.length === 0){ notificar("Los menús elegidos no tienen ingredientes."); return; }
+  cerrarModal();
+
+  const hoy = new Date().toLocaleDateString("es-ES", { day:"numeric", month:"long", year:"numeric" });
+  const titulos = menusSel.map(m => esc(m.titulo)).join(" · ");
+  const filas = ingredientes.map(ing => `<tr>
+      <td class="lc-check"></td>
+      <td class="lc-ing">${esc(ing)}</td>
+      <td class="lc-cant"></td>
+    </tr>`).join("");
+
+  const capa = document.getElementById("capaImpresion");
+  capa.innerHTML = `
+    <div class="barra-impresion">
+      <button class="btn-linea" id="impVolver" style="background:#fff;">← Volver</button>
+      <button class="btn-verde" id="impImprimir">🖨 Imprimir / Guardar PDF</button>
+    </div>
+    <div class="hoja hoja-compra">
+      <div class="cab">
+        <h1 style="font-size:28px;">Lista de la compra</h1>
+        <div class="fecha">${ingredientes.length} ingredientes · ${esc(hoy)}</div>
+        <div style="font-size:12px;color:#66705F;margin-top:4px;">${titulos}</div>
+      </div>
+      <table class="tabla-compra">
+        <thead><tr><th class="lc-check"></th><th class="lc-ing">Ingrediente</th><th class="lc-cant">Cantidad</th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+    </div>`;
+  fijarOrientacion(false);
+  document.body.classList.add("previsualizando");
+  document.getElementById("impVolver").onclick = cerrarPrevisualizacion;
+  document.getElementById("impImprimir").onclick = () => imprimir("Lista de la compra");
 }
 
 function abrirRepetidos(){
