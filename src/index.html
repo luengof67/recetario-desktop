@@ -263,7 +263,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v40<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v46<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -293,6 +293,7 @@ h2.hh-tras::after{display:none;}
 <div id="capaModal"></div>
 <div id="capaImpresion"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
 /* ══════════════════════════════════════════════════════════
@@ -363,8 +364,11 @@ const SECCIONES = [
     {id:"tapas_barra",nombre:"Tapas de barra"},{id:"tapas_esp",nombre:"Tapas especiales"}]},
   { id:"experiencias", nombre:"Experiencias", icono:"✨", sub:[
     {id:"menus_esp",nombre:"Menús especiales"},{id:"catas",nombre:"Catas maridadas"},{id:"cocteles",nombre:"Cócteles"}]},
+  { id:"grupos", nombre:"Menús de grupo", icono:"👥", sub:[
+    {id:"menus_grupo",nombre:"Entrantes"},{id:"mg_pescados",nombre:"Pescados"},{id:"mg_carnes",nombre:"Carnes"},
+    {id:"mg_postres",nombre:"Postres"},{id:"mg_especiales",nombre:"Platos especiales"}]},
   { id:"eventos", nombre:"Eventos", icono:"🎉", sub:[
-    {id:"menus_grupo",nombre:"Menús de grupo"},{id:"cocteles_evento",nombre:"Cócteles"}]},
+    {id:"cocteles_evento",nombre:"Cócteles"}]},
   { id:"cafeteria", nombre:"Cafetería", icono:"☕", sub:[
     {id:"sandwiches",nombre:"Sándwiches"},{id:"hamburguesas",nombre:"Hamburguesas"},{id:"tostas",nombre:"Tostas"},
     {id:"bocadillos",nombre:"Bocadillos"},{id:"pizzas",nombre:"Pizzas"},{id:"bowls",nombre:"Bowls"},
@@ -447,6 +451,11 @@ function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","
 
 /* Nombre de plato para los menús impresos: cada palabra con mayúscula inicial
    ("PAELLA MIXTA" o "paella mixta" → "Paella Mixta"). Solo afecta a la impresión. */
+function costeImpr(p){
+  return (window._incluirCostes && p.coste && p.coste.trim())
+    ? ` <span style="font-size:11px;color:#1E3A24;font-weight:600;">(coste: ${esc(p.coste)})</span>`
+    : "";
+}
 function tituloPlato(s){
   return String(s ?? "").toLowerCase()
     .replace(/(^|[\s(\[«"'\-–—/.])([a-záéíóúüñç])/g, (m, sep, letra) => sep + letra.toUpperCase());
@@ -744,6 +753,10 @@ function abrirFicha(id){
         <div class="etiqueta-sec">${esc(SUB_A_PRINCIPAL[p.subseccion]?.nombre || "")} · ${esc(NOMBRE_SUB[p.subseccion] || "")}</div>
         <h2 class="display" style="font-size:26px;font-weight:700;margin:4px 0 4px;">${esc(p.nombre)}</h2>
         ${p.descripcion ? `<p style="font-size:14px;color:var(--suave);margin:4px 0 0;">${esc(p.descripcion)}</p>` : ""}
+        ${(p.precio || p.coste) ? `<div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;">
+          ${p.precio ? `<div><span style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--suave);">Precio</span><br><span class="display" style="font-size:19px;font-weight:700;color:var(--teja,#B4552D);">${esc(p.precio)}</span></div>` : ""}
+          ${p.coste ? `<div><span style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--suave);">Coste escandallo</span><br><span class="display" style="font-size:19px;font-weight:700;color:#1E3A24;">${esc(p.coste)}</span></div>` : ""}
+        </div>` : ""}
         <div style="margin-top:18px;">
           <div class="titulo-bloque">Ingredientes</div>
           <div class="grupo-chips">${p.ingredientes.map(i => `<span class="chip-ing">${esc(i)}</span>`).join("")}</div>
@@ -840,6 +853,10 @@ function abrirFormulario(id){
         <div>
           <label class="campo-lbl" for="fPrecio">Precio <span style="font-weight:400;color:var(--suave);">(opcional, para cartas con precio por plato)</span></label>
           <input class="campo" id="fPrecio" value="${esc(p?.precio || "")}" placeholder="Ej.: 4,50 €">
+        </div>
+        <div>
+          <label class="campo-lbl" for="fCoste">Coste del escandallo <span style="font-weight:400;color:var(--suave);">(interno, opcional)</span></label>
+          <input class="campo" id="fCoste" value="${esc(p?.coste || "")}" placeholder="Ej.: 1,85 €" inputmode="decimal">
         </div>
         <div>
           <label class="fila-check" style="font-weight:600;">
@@ -984,6 +1001,7 @@ function abrirFormulario(id){
       subseccion: $("fSub").value,
       descripcion: $("fDesc").value.trim(),
       precio: $("fPrecio").value.trim(),
+      coste: $("fCoste").value.trim(),
       publico: $("fPublico").checked,
       destacado: $("fDestacado").checked,
       ingredientes, alergenos,
@@ -1399,6 +1417,12 @@ async function previsualizarMenu(id){
   const m = menus.find(x => x.id === id); if (!m) return;
   const logoMenu = (await stGet("config-logo")) || null;
 
+  /* Si algún plato del menú tiene coste de escandallo, preguntar si incluirlo */
+  const idsMenu = new Set();
+  m.apartados.forEach(a => a.platoIds.forEach(pid => idsMenu.add(pid)));
+  const hayCostes = [...idsMenu].some(pid => { const p = platos.find(x => x.id === pid); return p && p.coste && p.coste.trim(); });
+  window._incluirCostes = hayCostes ? confirm("Este menú tiene costes de escandallo.\n\n¿Quieres INCLUIR los costes en la impresión?\n\n(Aceptar = con costes · Cancelar = sin costes, para carta/sala)") : false;
+
   const capa = document.getElementById("capaImpresion");
   const barra = `
     <div class="barra-impresion">
@@ -1417,7 +1441,7 @@ async function previsualizarMenu(id){
         if (!p) return "";
         const nums = numerosAlergenos(p);
         return `<div class="ph">
-          <div class="ph-nombre">${esc(tituloPlato(p.nombre))}${nums ? `<sup>${nums}</sup>` : ""}</div>
+          <div class="ph-nombre">${esc(tituloPlato(p.nombre))}${nums ? `<sup>${nums}</sup>` : ""}${costeImpr(p)}</div>
           ${p.nombreEn ? `<div class="ph-en">${esc(p.nombreEn)}</div>` : (p.descripcion ? `<div class="ph-en">${esc(p.descripcion)}</div>` : "")}
         </div>`;
       }).join("");
@@ -1443,7 +1467,7 @@ async function previsualizarMenu(id){
           if (!p) return "";
           const nums = numerosAlergenos(p);
           return `<div class="pt">
-            <div class="pt-nombre">${esc(tituloPlato(p.nombre))}</div>
+            <div class="pt-nombre">${esc(tituloPlato(p.nombre))}${costeImpr(p)}</div>
             <div class="pt-linea"><b>Ingredientes:</b> ${esc(p.ingredientes.join(", "))}</div>
             <div class="pt-linea"><b>Alérgenos:</b> ${nums || "—"}</div>
           </div>`;
@@ -1491,7 +1515,7 @@ async function previsualizarMenu(id){
         p.alergenos.forEach(al => usados.add(al));
         const nums = p.alergenos.map(al => AL_MAP[al]?.icono || "").join("");
         return `<div class="col-linea">
-            <span class="col-nombre">${esc(tituloPlato(p.nombre))}</span>
+            <span class="col-nombre">${esc(tituloPlato(p.nombre))}${costeImpr(p)}</span>
             ${nums ? `<span class="col-al">${nums}</span>` : ""}
             <span class="col-puntos"></span>
             <span class="col-precio">${esc(p.precio || "")}</span>
@@ -1529,14 +1553,14 @@ async function previsualizarMenu(id){
         const iconos = p.alergenos.map(al => AL_MAP[al]?.icono || "").join(" ");
         if (m.plantilla === "elegante"){
           return `<div class="eleg-plato">
-            <div class="eleg-nombre">${esc(tituloPlato(p.nombre))}</div>
+            <div class="eleg-nombre">${esc(tituloPlato(p.nombre))}${costeImpr(p)}</div>
             ${p.descripcion ? `<div class="eleg-desc">${esc(p.descripcion)}</div>` : ""}
             ${iconos ? `<div class="eleg-al">${iconos}</div>` : ""}
           </div>`;
         }
         return `<div class="plato-linea">
           <div>
-            <div class="plato-nombre">${esc(tituloPlato(p.nombre))}</div>
+            <div class="plato-nombre">${esc(tituloPlato(p.nombre))}${costeImpr(p)}</div>
             ${p.descripcion ? `<div class="plato-desc">${esc(p.descripcion)}</div>` : ""}
           </div>
           <div class="plato-al">${iconos}</div>
@@ -1574,6 +1598,7 @@ async function previsualizarMenu(id){
   document.getElementById("impVolver").onclick = cerrarPrevisualizacion;
   document.getElementById("impEditar").onclick = () => { cerrarPrevisualizacion(); abrirEditorMenu(id); };
   document.getElementById("impImprimir").onclick = () => imprimir(m.titulo || "menu");
+  anadirBotonesExportar(m.titulo || "menu");
 }
 function cerrarPrevisualizacion(){
   document.body.classList.remove("previsualizando");
@@ -1598,6 +1623,47 @@ async function imprimir(nombreArchivo){
     catch(e){ /* si el plugin falla, probamos el método clásico */ }
   }
   window.print();
+}
+
+/* Inyecta botones "Excel" y "PDF" en la barra de la hoja que se está previsualizando.
+   Se llama al final de cada previsualización. nombre = nombre base del archivo. */
+function anadirBotonesExportar(nombre){
+  const barra = document.querySelector("#capaImpresion .barra-impresion");
+  if (!barra || barra.querySelector(".btn-exportar")) return;
+  const btnExcel = document.createElement("button");
+  btnExcel.className = "btn-linea btn-exportar";
+  btnExcel.style.background = "#fff";
+  btnExcel.textContent = "⬇ Excel";
+  btnExcel.onclick = () => exportarExcel(nombre);
+  /* insertar antes del botón de imprimir (el último) */
+  barra.insertBefore(btnExcel, barra.lastElementChild);
+}
+
+/* Exporta a .xlsx la primera tabla de la hoja mostrada; si no hay tabla, usa las líneas de texto */
+function exportarExcel(nombre){
+  try {
+    const hoja = document.querySelector("#capaImpresion .hoja");
+    if (!hoja){ notificar("No hay nada que exportar."); return; }
+    let datos = [];
+    const tabla = hoja.querySelector("table");
+    if (tabla){
+      tabla.querySelectorAll("tr").forEach(tr => {
+        const fila = [...tr.querySelectorAll("th,td")].map(td => td.innerText.trim());
+        if (fila.some(c => c !== "")) datos.push(fila);
+      });
+    } else {
+      /* sin tabla (listado, menús): recoger títulos y elementos de lista */
+      hoja.querySelectorAll("h1,h2,h3,li,.ph-nombre,.plato-nombre,.eleg-nombre,.col-nombre,.pt-nombre").forEach(el => {
+        const t = el.innerText.trim();
+        if (t) datos.push([t]);
+      });
+    }
+    if (datos.length === 0){ notificar("No hay datos que exportar."); return; }
+    const ws = XLSX.utils.aoa_to_sheet(datos);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Hoja1");
+    XLSX.writeFile(wb, (nombre || "documento").replace(/[^\w áéíóúñ-]/gi, "").trim() + ".xlsx");
+  } catch(e){ notificar("No se pudo exportar a Excel."); }
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -1711,6 +1777,7 @@ function abrirListaCompra(){
   if (menus.length === 0){ notificar("Primero crea algún menú."); return; }
   const ordenados = [...menus].sort((a, b) => (b.creado || 0) - (a.creado || 0));
   const seleccion = new Set();
+  let extras = []; /* ingredientes añadidos a mano o desde Word */
 
   const capa = document.getElementById("capaModal");
   function pintar(){
@@ -1718,7 +1785,7 @@ function abrirListaCompra(){
       <div class="modal ancho" onclick="event.stopPropagation()" style="padding:22px 24px 24px;">
         <h2 class="display" style="font-size:22px;font-weight:700;margin:0;">Lista de la compra</h2>
         <p style="font-size:13px;color:var(--suave);margin:8px 0 14px;">Marca los menús que quieres incluir. Se juntarán todos sus ingredientes, sin repetir, en orden alfabético.</p>
-        <div style="display:flex;flex-direction:column;gap:2px;max-height:46vh;overflow-y:auto;">
+        <div style="display:flex;flex-direction:column;gap:2px;max-height:38vh;overflow-y:auto;">
           ${ordenados.map(m => `<label class="fila-check" style="padding:10px 4px;border-bottom:1px solid var(--linea);">
             <input type="checkbox" data-m="${m.id}" ${seleccion.has(m.id) ? "checked" : ""}>
             <span style="flex:1;">
@@ -1726,6 +1793,25 @@ function abrirListaCompra(){
               <span style="font-size:12px;color:var(--suave);"><br>${m.fecha ? esc(m.fecha) + " · " : ""}${m.apartados.reduce((n,a)=>n+a.platoIds.length,0)} platos</span>
             </span>
           </label>`).join("")}
+        </div>
+        <div style="border:1px dashed var(--linea);border-radius:10px;padding:12px;margin-top:14px;">
+          <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Añadir ingredientes extra <span style="font-weight:400;color:var(--suave);">(bebidas, servilletas, hielo…)</span></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn-linea" id="lcWord" style="flex:1;min-width:150px;">📎 Desde Word o texto</button>
+            <button class="btn-linea" id="lcManual" style="flex:1;min-width:130px;">✍️ Escribir a mano</button>
+          </div>
+          ${extras.length ? `<div style="margin-top:10px;font-size:13px;color:var(--verde);">✓ ${extras.length} ingrediente(s) extra añadidos</div>` : ""}
+          <input type="file" id="lcFile" accept=".docx,.doc,.txt" style="display:none;">
+        </div>
+        <div style="border:1px dashed var(--linea);border-radius:10px;padding:12px;margin-top:12px;">
+          <div style="font-size:13px;font-weight:600;margin-bottom:6px;">🍽️ Lista a partir de nombres de platos</div>
+          <div style="font-size:12px;color:var(--suave);margin-bottom:8px;">Escribe o sube nombres de platos (uno por línea o separados por comas). Buscaré sus ingredientes en el recetario${GEMINI_API_KEY ? " y los que no encuentre los deduciré con la IA" : ""}.</div>
+          <textarea class="campo" id="lcPlatos" rows="4" placeholder="Ej.:&#10;Paella mixta&#10;Ensalada campera&#10;Tarta de queso"></textarea>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+            <button class="btn-linea" id="lcPlatosWord" style="flex:1;min-width:150px;">📎 Subir Word con platos</button>
+            <button class="btn-verde" id="lcDesdePlatos" style="flex:1;min-width:150px;">Generar desde estos platos</button>
+          </div>
+          <input type="file" id="lcPlatosFile" accept=".docx,.doc,.txt" style="display:none;">
         </div>
         <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap;">
           <button class="btn-linea" id="lcCancelar">Cancelar</button>
@@ -1739,43 +1825,160 @@ function abrirListaCompra(){
       if (ch.checked) seleccion.add(ch.dataset.m); else seleccion.delete(ch.dataset.m);
       document.getElementById("lcGenerar").textContent = "Generar lista (" + seleccion.size + ")";
     });
+    document.getElementById("lcWord").onclick = () => document.getElementById("lcFile").click();
+    document.getElementById("lcFile").onchange = async e => {
+      const file = e.target.files?.[0]; if (!file) return;
+      e.target.value = "";
+      try {
+        let texto = "";
+        const nombre = (file.name || "").toLowerCase();
+        if (nombre.endsWith(".txt")){ texto = await file.text(); }
+        else { const buffer = await file.arrayBuffer(); const res = await window.mammoth.extractRawText({ arrayBuffer: buffer }); texto = res.value || ""; }
+        const nuevos = extraerIngredientesTexto(texto);
+        if (nuevos.length === 0){ notificar("No se encontraron ingredientes en el documento."); return; }
+        extras = extras.concat(nuevos);
+        notificar(nuevos.length + " ingrediente(s) añadidos");
+        pintar();
+      } catch(err){ notificar("No se pudo leer el documento."); }
+    };
+    document.getElementById("lcManual").onclick = () => {
+      const txt = prompt("Escribe los ingredientes separados por comas o saltos de línea:");
+      if (!txt) return;
+      const nuevos = extraerIngredientesTexto(txt);
+      if (nuevos.length){ extras = extras.concat(nuevos); pintar(); }
+    };
     document.getElementById("lcGenerar").onclick = () => {
-      if (seleccion.size === 0){ notificar("Marca al menos un menú."); return; }
-      generarListaCompra([...seleccion]);
+      if (seleccion.size === 0 && extras.length === 0){ notificar("Marca al menos un menú o añade ingredientes."); return; }
+      generarListaCompra([...seleccion], extras);
+    };
+    document.getElementById("lcDesdePlatos").onclick = () => {
+      const txt = document.getElementById("lcPlatos").value;
+      const nombres = extraerIngredientesTexto(txt);
+      if (nombres.length === 0){ notificar("Escribe o sube algún nombre de plato."); return; }
+      listaDesdeNombres(nombres, extras);
+    };
+    document.getElementById("lcPlatosWord").onclick = () => document.getElementById("lcPlatosFile").click();
+    document.getElementById("lcPlatosFile").onchange = async e => {
+      const file = e.target.files?.[0]; if (!file) return;
+      e.target.value = "";
+      try {
+        let texto = "";
+        const nombre = (file.name || "").toLowerCase();
+        if (nombre.endsWith(".txt")){ texto = await file.text(); }
+        else { const buffer = await file.arrayBuffer(); const res = await window.mammoth.extractRawText({ arrayBuffer: buffer }); texto = res.value || ""; }
+        const nombres = extraerIngredientesTexto(texto);
+        if (nombres.length === 0){ notificar("No se encontraron platos en el documento."); return; }
+        /* Volcar los nombres leídos en el cuadro de texto y generar directamente */
+        const area = document.getElementById("lcPlatos");
+        area.value = (area.value.trim() ? area.value.trim() + "\n" : "") + nombres.join("\n");
+        notificar(nombres.length + " plato(s) leídos del Word");
+      } catch(err){ notificar("No se pudo leer el documento."); }
     };
   }
   pintar();
 }
 
-function generarListaCompra(menuIds){
+/* A partir de una lista de NOMBRES de plato: busca en el recetario y, lo que no esté, lo deduce con IA */
+async function listaDesdeNombres(nombres, extras){
+  cerrarModal();
+  mostrarCargando("Preparando la lista de la compra…");
+  const ingredientesFinal = [];
+  const noEncontrados = [];
+
+  nombres.forEach(nom => {
+    const clave = normalizarNombre(nom);
+    const plato = platos.find(p => normalizarNombre(p.nombre) === clave);
+    if (plato && plato.ingredientes && plato.ingredientes.length){
+      ingredientesFinal.push(...plato.ingredientes);
+    } else {
+      noEncontrados.push(nom);
+    }
+  });
+
+  /* Los no encontrados: deducir con IA (si hay clave) */
+  if (noEncontrados.length && GEMINI_API_KEY){
+    try {
+      const prompt = `Eres un cocinero. Para cada uno de estos platos españoles, dame sus ingredientes principales (sin cantidades, en minúscula). Responde SOLO un objeto JSON donde cada clave es el nombre del plato y el valor un array de ingredientes, sin texto adicional ni marcas de código.
+Platos: ${JSON.stringify(noEncontrados)}`;
+      const resp = await llamarGeminiTexto(prompt);
+      let texto = (resp?.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("");
+      texto = texto.replace(/```json|```/g, "").trim();
+      const ini = texto.indexOf("{"), fin = texto.lastIndexOf("}");
+      if (ini !== -1 && fin !== -1){
+        const obj = JSON.parse(texto.slice(ini, fin + 1));
+        Object.values(obj).forEach(arr => { if (Array.isArray(arr)) ingredientesFinal.push(...arr); });
+      }
+    } catch(e){ /* si falla la IA, seguimos con lo que haya */ }
+  }
+
+  (extras || []).forEach(e => ingredientesFinal.push(e));
+  cerrarModal();
+  pintarHojaCompra(ingredientesFinal, nombres.join(" · "), noEncontrados.length && !GEMINI_API_KEY ? noEncontrados : []);
+}
+
+function mostrarCargando(msg){
+  const capa = document.getElementById("capaModal");
+  capa.innerHTML = `<div class="velo"><div class="modal" style="padding:30px 24px;text-align:center;">
+    <div style="font-size:34px;">🛒</div>
+    <div class="display" style="font-size:19px;font-weight:600;margin-top:8px;">${esc(msg)}</div>
+    <div style="font-size:13px;color:var(--suave);margin-top:6px;">Un momento…</div>
+  </div></div>`;
+}
+
+/* Extrae ingredientes de un texto: separa por comas, saltos de línea, guiones o punto y coma */
+function extraerIngredientesTexto(texto){
+  return String(texto || "")
+    .split(/[\n,;•·]|^\s*[-*]\s/gm)
+    .map(s => s.replace(/^\s*[-*·•]\s*/, "").trim())
+    .filter(s => s.length >= 2 && s.length <= 60);
+}
+
+function generarListaCompra(menuIds, extras){
   const menusSel = menus.filter(m => menuIds.includes(m.id));
   /* Recoger los ids de platos de los menús elegidos */
   const platoIds = new Set();
   menusSel.forEach(m => m.apartados.forEach(a => a.platoIds.forEach(pid => platoIds.add(pid))));
   /* Juntar ingredientes sin repetir (normalizando para no duplicar por may/acentos) */
   const vistos = new Map(); /* clave normalizada -> texto a mostrar */
+  const anadir = txt => {
+    const t = String(txt).trim(); if (!t) return;
+    const clave = t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+    if (!vistos.has(clave)) vistos.set(clave, t.charAt(0).toUpperCase() + t.slice(1));
+  };
   platoIds.forEach(pid => {
     const p = platos.find(x => x.id === pid);
     if (!p) return;
-    (p.ingredientes || []).forEach(ing => {
-      const txt = String(ing).trim();
-      if (!txt) return;
-      const clave = txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
-      if (!vistos.has(clave)) vistos.set(clave, txt.charAt(0).toUpperCase() + txt.slice(1));
-    });
+    (p.ingredientes || []).forEach(anadir);
   });
+  (extras || []).forEach(anadir);
   const ingredientes = [...vistos.values()].sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }));
 
-  if (ingredientes.length === 0){ notificar("Los menús elegidos no tienen ingredientes."); return; }
+  if (ingredientes.length === 0){ notificar("No hay ingredientes que listar."); return; }
   cerrarModal();
+  const titulos = menusSel.map(m => esc(m.titulo)).join(" · ") + (extras && extras.length ? (menusSel.length ? " · " : "") + "+ extras" : "");
+  pintarHojaCompra(ingredientes, titulos, []);
+}
+
+/* Genera la hoja imprimible de la compra a partir de una lista de ingredientes (los deduplica y ordena) */
+function pintarHojaCompra(listaIngredientes, subtitulo, avisoNoEncontrados){
+  const vistos = new Map();
+  (listaIngredientes || []).forEach(txt => {
+    const t = String(txt).trim(); if (!t) return;
+    const clave = t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+    if (!vistos.has(clave)) vistos.set(clave, t.charAt(0).toUpperCase() + t.slice(1));
+  });
+  const ingredientes = [...vistos.values()].sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }));
+  if (ingredientes.length === 0){ notificar("No hay ingredientes que listar."); return; }
 
   const hoy = new Date().toLocaleDateString("es-ES", { day:"numeric", month:"long", year:"numeric" });
-  const titulos = menusSel.map(m => esc(m.titulo)).join(" · ");
   const filas = ingredientes.map(ing => `<tr>
       <td class="lc-check"></td>
       <td class="lc-ing">${esc(ing)}</td>
       <td class="lc-cant"></td>
     </tr>`).join("");
+  const aviso = (avisoNoEncontrados && avisoNoEncontrados.length)
+    ? `<div style="font-size:11px;color:#B4483C;margin-top:6px;">No se encontraron en el recetario (sin IA disponible): ${avisoNoEncontrados.map(esc).join(", ")}</div>`
+    : "";
 
   const capa = document.getElementById("capaImpresion");
   capa.innerHTML = `
@@ -1787,7 +1990,8 @@ function generarListaCompra(menuIds){
       <div class="cab">
         <h1 style="font-size:28px;">Lista de la compra</h1>
         <div class="fecha">${ingredientes.length} ingredientes · ${esc(hoy)}</div>
-        <div style="font-size:12px;color:#66705F;margin-top:4px;">${titulos}</div>
+        <div style="font-size:12px;color:#66705F;margin-top:4px;">${subtitulo}</div>
+        ${aviso}
       </div>
       <table class="tabla-compra">
         <thead><tr><th class="lc-check"></th><th class="lc-ing">Ingrediente</th><th class="lc-cant">Cantidad</th></tr></thead>
@@ -1798,6 +2002,7 @@ function generarListaCompra(menuIds){
   document.body.classList.add("previsualizando");
   document.getElementById("impVolver").onclick = cerrarPrevisualizacion;
   document.getElementById("impImprimir").onclick = () => imprimir("Lista de la compra");
+  anadirBotonesExportar("Lista de la compra");
 }
 
 function abrirRepetidos(){
@@ -1897,6 +2102,7 @@ function previsualizarListado(){
   document.body.classList.add("previsualizando");
   document.getElementById("impVolver").onclick = cerrarPrevisualizacion;
   document.getElementById("impImprimir").onclick = () => imprimir("Listado de platos");
+  anadirBotonesExportar("Listado de platos");
 }
 
 function previsualizarCuadro(nombre, seccionesSel){
@@ -1952,6 +2158,7 @@ function previsualizarCuadro(nombre, seccionesSel){
   document.body.classList.add("previsualizando");
   document.getElementById("impVolver").onclick = cerrarPrevisualizacion;
   document.getElementById("impImprimir").onclick = () => imprimir(document.querySelector(".hoja h1")?.textContent?.trim() || "documento");
+  anadirBotonesExportar(document.querySelector(".hoja h1")?.textContent?.trim() || "documento");
 }
 
 /* ══════════════════════════════════════════════════════════
