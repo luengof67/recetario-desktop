@@ -142,31 +142,31 @@ body.previsualizando #capaImpresion{display:block;position:fixed;inset:0;backgro
 .tabla-al td.nombre-plato{font-size:12px;}
 .tabla-al tbody tr:nth-child(even) td.nombre-plato,.tabla-al tbody tr:nth-child(even) td.celda{background:#FAFBF8;}
 /* ── Plantilla hotel bilingüe ── */
-.hoja-hotel{font-family:'Inter',Arial,sans-serif;}
+.hoja-hotel{font-family:'Inter',Arial,sans-serif;font-size:16px;}
 .hh-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
 .hh-logo{max-height:92px;max-width:300px;object-fit:contain;}
 .hh-nombre-resto{font-size:22px;font-weight:700;color:#20291F;}
 .hh-marca{font-size:15px;color:#20291F;font-weight:600;margin-top:6px;}
 .hh-linea-titulo{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:20px;flex-wrap:wrap;}
-.hh-titulo{font-size:23px;font-weight:700;color:#20291F;}
+.hh-titulo{font-size:1.44em;font-weight:700;color:#20291F;}
 .hh-fecha{font-size:13px;font-weight:600;color:#20291F;}
-.hoja-hotel h2.hh-seccion{font-family:'Inter',Arial,sans-serif;font-size:16px;font-weight:700;letter-spacing:.02em;
+.hoja-hotel h2.hh-seccion{font-family:'Inter',Arial,sans-serif;font-size:1em;font-weight:700;letter-spacing:.02em;
   text-transform:none;color:#20291F;text-align:center;margin:30px auto 14px;display:table;
   border-bottom:2px solid #20291F;padding:0 20px 6px;}
 .hoja-hotel h2.hh-seccion::after{display:none;}
-.ph{text-align:center;padding:7px 0;}
-.ph-nombre{font-size:16.5px;font-weight:700;color:#20291F;}
+.ph{text-align:center;padding:0.44em 0;}
+.ph-nombre{font-size:1.03em;font-weight:700;color:#20291F;}
 .ph-nombre sup{color:#B23A3A;font-size:10px;font-weight:700;margin-left:4px;}
-.ph-en{font-size:12px;font-style:italic;color:#555;}
-.hh-nota{text-align:center;font-size:15px;font-weight:700;margin-top:32px;color:#20291F;}
-.hh-nota .en{display:block;font-weight:600;font-style:italic;font-size:13px;}
-.hh-precios{text-align:center;margin-top:20px;font-size:14px;font-weight:700;color:#20291F;}
+.ph-en{font-size:0.75em;font-style:italic;color:#555;}
+.hh-nota{text-align:center;font-size:0.94em;font-weight:700;margin-top:32px;color:#20291F;}
+.hh-nota .en{display:block;font-weight:600;font-style:italic;font-size:0.81em;}
+.hh-precios{text-align:center;margin-top:20px;font-size:0.88em;font-weight:700;color:#20291F;}
 .hh-precios div{margin:3px 0;}
 .leyenda-hotel{display:flex;flex-wrap:wrap;justify-content:center;gap:12px 16px;margin-top:34px;}
 .lh-item{display:flex;align-items:center;gap:3px;}
 .lh-num{font-size:24px;font-weight:300;color:#444;line-height:1;}
 .lh-cuerpo{display:flex;flex-direction:column;align-items:center;}
-.lh-cuerpo span{font-size:17px;line-height:1;}
+.lh-cuerpo span{font-size:1.06em;line-height:1;}
 .lh-cuerpo small{font-size:8px;letter-spacing:.04em;text-transform:uppercase;color:#555;margin-top:2px;max-width:70px;text-align:center;}
 .hh-pie{margin-top:26px;border-top:1px solid #999;border-bottom:1px solid #999;padding:7px 4px;text-align:center;font-size:11px;color:#333;line-height:1.5;}
 /* ── Hoja trasera de ingredientes (doble cara) ── */
@@ -263,7 +263,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v46<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v47<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -1599,6 +1599,44 @@ async function previsualizarMenu(id){
   document.getElementById("impEditar").onclick = () => { cerrarPrevisualizacion(); abrirEditorMenu(id); };
   document.getElementById("impImprimir").onclick = () => imprimir(m.titulo || "menu");
   anadirBotonesExportar(m.titulo || "menu");
+
+  /* Auto-ajuste de tamaño solo en la plantilla hotel: si no cabe en una hoja, reduce la escala.
+     Además, un control manual para afinarlo. */
+  if (m.plantilla === "hotel"){
+    const hoja = document.querySelector("#capaImpresion .hoja-hotel");
+    if (hoja){
+      const ALTO_A4 = 1123; /* px aprox. de una hoja A4 a 96dpi menos márgenes */
+      let escala = 100;
+      const aplicar = e => { hoja.style.fontSize = e + "%"; };
+      /* Auto: bajar hasta que quepa (mínimo 70%) */
+      const autoajustar = () => {
+        escala = 100; aplicar(100);
+        let intentos = 0;
+        while (hoja.scrollHeight > ALTO_A4 && escala > 70 && intentos < 30){
+          escala -= 2; aplicar(escala); intentos++;
+        }
+        const sel = document.getElementById("hotelEscala");
+        if (sel) sel.value = escala;
+        const et = document.getElementById("hotelEscalaVal");
+        if (et) et.textContent = escala + "%";
+      };
+      /* Control manual en la barra */
+      const barra = document.querySelector("#capaImpresion .barra-impresion");
+      if (barra && !document.getElementById("hotelEscala")){
+        const caja = document.createElement("div");
+        caja.style.cssText = "display:flex;align-items:center;gap:6px;margin-right:auto;background:#fff;border:1px solid var(--linea);border-radius:8px;padding:4px 10px;";
+        caja.innerHTML = `<span style="font-size:12px;color:var(--suave);">Tamaño</span>
+          <input type="range" id="hotelEscala" min="70" max="115" step="1" value="100" style="width:90px;">
+          <span id="hotelEscalaVal" style="font-size:12px;font-weight:600;min-width:34px;">100%</span>`;
+        barra.insertBefore(caja, barra.firstChild);
+        document.getElementById("hotelEscala").oninput = e => {
+          escala = Number(e.target.value); aplicar(escala);
+          document.getElementById("hotelEscalaVal").textContent = escala + "%";
+        };
+      }
+      setTimeout(autoajustar, 60); /* esperar a que el navegador pinte para medir bien */
+    }
+  }
 }
 function cerrarPrevisualizacion(){
   document.body.classList.remove("previsualizando");
