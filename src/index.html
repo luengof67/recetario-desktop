@@ -215,14 +215,15 @@ h2.hh-tras::after{display:none;}
 .hoja-pizarra .leyenda{border-top:1px dashed #6b7a63 !important;}
 .hoja-pizarra .leyenda-titulo, .hoja-pizarra .leyenda-items, .hoja-pizarra .pie{color:#c9d2c0 !important;}
 /* ── Plantilla COLUMNAS (cafetería con precios) ── */
+.hoja-col{font-size:16px;}
 .hoja-col h2{text-align:left;}
 .hoja-col h2::after{margin:8px 0 0;}
-.col-linea{display:flex;align-items:baseline;gap:8px;padding:5px 0;}
-.col-nombre{font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:600;white-space:nowrap;}
+.col-linea{display:flex;align-items:baseline;gap:8px;padding:0.3em 0;}
+.col-nombre{font-family:'Fraunces',Georgia,serif;font-size:1em;font-weight:600;white-space:nowrap;}
 .col-puntos{flex:1;border-bottom:1.5px dotted #C9CEC2;transform:translateY(-4px);min-width:20px;}
-.col-precio{font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:600;color:#2F5233;white-space:nowrap;}
-.col-al{font-size:12px;color:#66705F;margin-left:2px;}
-.col-desc{font-size:12px;color:#66705F;margin-top:-2px;}
+.col-precio{font-family:'Fraunces',Georgia,serif;font-size:1em;font-weight:600;color:#2F5233;white-space:nowrap;}
+.col-al{font-size:0.75em;color:#66705F;margin-left:2px;}
+.col-desc{font-size:0.75em;color:#66705F;margin-top:-2px;}
 /* ── Plantilla ELEGANTE (una columna centrada) ── */
 .hoja-eleg{font-family:'Fraunces',Georgia,serif;padding:60px 70px;}
 .hoja-eleg .cab{border-bottom:1px solid #DDA321;}
@@ -263,7 +264,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v47<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v48<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -1600,43 +1601,45 @@ async function previsualizarMenu(id){
   document.getElementById("impImprimir").onclick = () => imprimir(m.titulo || "menu");
   anadirBotonesExportar(m.titulo || "menu");
 
-  /* Auto-ajuste de tamaño solo en la plantilla hotel: si no cabe en una hoja, reduce la escala.
-     Además, un control manual para afinarlo. */
-  if (m.plantilla === "hotel"){
-    const hoja = document.querySelector("#capaImpresion .hoja-hotel");
-    if (hoja){
-      const ALTO_A4 = 1123; /* px aprox. de una hoja A4 a 96dpi menos márgenes */
-      let escala = 100;
-      const aplicar = e => { hoja.style.fontSize = e + "%"; };
-      /* Auto: bajar hasta que quepa (mínimo 70%) */
-      const autoajustar = () => {
-        escala = 100; aplicar(100);
-        let intentos = 0;
-        while (hoja.scrollHeight > ALTO_A4 && escala > 70 && intentos < 30){
-          escala -= 2; aplicar(escala); intentos++;
-        }
-        const sel = document.getElementById("hotelEscala");
-        if (sel) sel.value = escala;
-        const et = document.getElementById("hotelEscalaVal");
-        if (et) et.textContent = escala + "%";
-      };
-      /* Control manual en la barra */
-      const barra = document.querySelector("#capaImpresion .barra-impresion");
-      if (barra && !document.getElementById("hotelEscala")){
-        const caja = document.createElement("div");
-        caja.style.cssText = "display:flex;align-items:center;gap:6px;margin-right:auto;background:#fff;border:1px solid var(--linea);border-radius:8px;padding:4px 10px;";
-        caja.innerHTML = `<span style="font-size:12px;color:var(--suave);">Tamaño</span>
-          <input type="range" id="hotelEscala" min="70" max="115" step="1" value="100" style="width:90px;">
-          <span id="hotelEscalaVal" style="font-size:12px;font-weight:600;min-width:34px;">100%</span>`;
-        barra.insertBefore(caja, barra.firstChild);
-        document.getElementById("hotelEscala").oninput = e => {
-          escala = Number(e.target.value); aplicar(escala);
-          document.getElementById("hotelEscalaVal").textContent = escala + "%";
-        };
-      }
-      setTimeout(autoajustar, 60); /* esperar a que el navegador pinte para medir bien */
+  /* Auto-ajuste de tamaño en cualquier plantilla: si el menú no cabe en una hoja,
+     reduce la escala automáticamente. Además, un deslizador para afinarlo a mano. */
+  ajustarHojaAUnaPagina();
+}
+
+/* Reduce proporcionalmente la hoja mostrada para que quepa en una página A4, y añade
+   un control de tamaño en la barra. Funciona en todas las plantillas de menú. */
+function ajustarHojaAUnaPagina(){
+  const hoja = document.querySelector("#capaImpresion .hoja");
+  if (!hoja) return;
+  const ALTO_A4 = 1123; /* px aprox. de una A4 a 96dpi menos márgenes */
+  if (!hoja.style.fontSize) hoja.style.fontSize = "100%";
+  let escala = 100;
+  const aplicar = e => { hoja.style.fontSize = e + "%"; };
+  const autoajustar = () => {
+    escala = 100; aplicar(100);
+    let intentos = 0;
+    while (hoja.scrollHeight > ALTO_A4 && escala > 60 && intentos < 40){
+      escala -= 2; aplicar(escala); intentos++;
     }
+    const sel = document.getElementById("hojaEscala");
+    if (sel) sel.value = escala;
+    const et = document.getElementById("hojaEscalaVal");
+    if (et) et.textContent = escala + "%";
+  };
+  const barra = document.querySelector("#capaImpresion .barra-impresion");
+  if (barra && !document.getElementById("hojaEscala")){
+    const caja = document.createElement("div");
+    caja.style.cssText = "display:flex;align-items:center;gap:6px;margin-right:auto;background:#fff;border:1px solid var(--linea);border-radius:8px;padding:4px 10px;";
+    caja.innerHTML = `<span style="font-size:12px;color:var(--suave);">Tamaño</span>
+      <input type="range" id="hojaEscala" min="60" max="120" step="1" value="100" style="width:90px;">
+      <span id="hojaEscalaVal" style="font-size:12px;font-weight:600;min-width:34px;">100%</span>`;
+    barra.insertBefore(caja, barra.firstChild);
+    document.getElementById("hojaEscala").oninput = e => {
+      escala = Number(e.target.value); aplicar(escala);
+      document.getElementById("hojaEscalaVal").textContent = escala + "%";
+    };
   }
+  setTimeout(autoajustar, 60);
 }
 function cerrarPrevisualizacion(){
   document.body.classList.remove("previsualizando");
