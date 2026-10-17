@@ -158,6 +158,8 @@ body.previsualizando #capaImpresion{display:block;position:fixed;inset:0;backgro
 .ph-nombre{font-size:1.03em;font-weight:700;color:#20291F;}
 .ph-nombre sup{color:#B23A3A;font-size:10px;font-weight:700;margin-left:4px;}
 .ph-en{font-size:0.75em;font-style:italic;color:#555;}
+.ph-oferta{display:inline-block;margin-top:3px;font-size:0.7em;font-weight:700;color:#fff;background:#B23A3A;
+  padding:2px 9px;border-radius:999px;letter-spacing:.02em;}
 .hh-nota{text-align:center;font-size:0.94em;font-weight:700;margin-top:32px;color:#20291F;}
 .hh-nota .en{display:block;font-weight:600;font-style:italic;font-size:0.81em;}
 .hh-precios{text-align:center;margin-top:20px;font-size:0.88em;font-weight:700;color:#20291F;}
@@ -264,7 +266,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v48<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v49<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -860,6 +862,10 @@ function abrirFormulario(id){
           <input class="campo" id="fCoste" value="${esc(p?.coste || "")}" placeholder="Ej.: 1,85 €" inputmode="decimal">
         </div>
         <div>
+          <label class="campo-lbl" for="fOferta">Oferta / suplemento <span style="font-weight:400;color:var(--suave);">(opcional, sale destacado en rojo en el menú)</span></label>
+          <input class="campo" id="fOferta" value="${esc(p?.oferta || "")}" placeholder="Ej.: Suplemento 11 €">
+        </div>
+        <div>
           <label class="fila-check" style="font-weight:600;">
             <input type="checkbox" id="fPublico" ${p?.publico ? "checked" : ""}>
             <span>📱 Mostrar este plato en la carta pública (QR de clientes)</span>
@@ -1003,6 +1009,7 @@ function abrirFormulario(id){
       descripcion: $("fDesc").value.trim(),
       precio: $("fPrecio").value.trim(),
       coste: $("fCoste").value.trim(),
+      oferta: $("fOferta").value.trim(),
       publico: $("fPublico").checked,
       destacado: $("fDestacado").checked,
       ingredientes, alergenos,
@@ -1444,6 +1451,7 @@ async function previsualizarMenu(id){
         return `<div class="ph">
           <div class="ph-nombre">${esc(tituloPlato(p.nombre))}${nums ? `<sup>${nums}</sup>` : ""}${costeImpr(p)}</div>
           ${p.nombreEn ? `<div class="ph-en">${esc(p.nombreEn)}</div>` : (p.descripcion ? `<div class="ph-en">${esc(p.descripcion)}</div>` : "")}
+          ${p.oferta ? `<div class="ph-oferta">${esc(p.oferta)}</div>` : ""}
         </div>`;
       }).join("");
       if (!lineas) return "";
