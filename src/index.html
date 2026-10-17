@@ -266,7 +266,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v49<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v50<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -862,8 +862,8 @@ function abrirFormulario(id){
           <input class="campo" id="fCoste" value="${esc(p?.coste || "")}" placeholder="Ej.: 1,85 €" inputmode="decimal">
         </div>
         <div>
-          <label class="campo-lbl" for="fOferta">Oferta / suplemento <span style="font-weight:400;color:var(--suave);">(opcional, sale destacado en rojo en el menú)</span></label>
-          <input class="campo" id="fOferta" value="${esc(p?.oferta || "")}" placeholder="Ej.: Suplemento 11 €">
+          <label class="campo-lbl" for="fOferta">Suplemento <span style="font-weight:400;color:var(--suave);">(opcional, solo el importe — en el menú sale «Suplemento 11 €» en rojo)</span></label>
+          <input class="campo" id="fOferta" value="${esc(p?.oferta || "")}" placeholder="Ej.: 11 €">
         </div>
         <div>
           <label class="fila-check" style="font-weight:600;">
@@ -1451,7 +1451,7 @@ async function previsualizarMenu(id){
         return `<div class="ph">
           <div class="ph-nombre">${esc(tituloPlato(p.nombre))}${nums ? `<sup>${nums}</sup>` : ""}${costeImpr(p)}</div>
           ${p.nombreEn ? `<div class="ph-en">${esc(p.nombreEn)}</div>` : (p.descripcion ? `<div class="ph-en">${esc(p.descripcion)}</div>` : "")}
-          ${p.oferta ? `<div class="ph-oferta">${esc(p.oferta)}</div>` : ""}
+          ${p.oferta ? `<div class="ph-oferta">${esc(/suplemento|oferta/i.test(p.oferta) ? p.oferta : "Suplemento " + p.oferta)}</div>` : ""}
         </div>`;
       }).join("");
       if (!lineas) return "";
