@@ -154,6 +154,7 @@ body.previsualizando #capaImpresion{display:block;position:fixed;inset:0;backgro
   text-transform:none;color:#20291F;text-align:center;margin:30px auto 14px;display:table;
   border-bottom:2px solid #20291F;padding:0 20px 6px;}
 .hoja-hotel h2.hh-seccion::after{display:none;}
+.hoja-hotel h2.hh-seccion.hh-veggie{color:#2E7D32;border-bottom-color:#2E7D32;}
 .ph{text-align:center;padding:0.44em 0;}
 .ph-nombre{font-size:1.03em;font-weight:700;color:#20291F;}
 .ph-nombre sup{color:#B23A3A;font-size:10px;font-weight:700;margin-left:4px;}
@@ -268,7 +269,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v52<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v53<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -1221,6 +1222,7 @@ async function abrirEditorMenu(id){
           <label class="campo-lbl">Apartados y platos *</label>
           <div id="mApartados" style="display:grid;gap:10px;"></div>
           <button class="btn-linea" id="mAddApartado" style="margin-top:10px;">+ Añadir apartado</button>
+          <button class="btn-linea" id="mAddVeggie" style="margin-top:10px;margin-left:8px;">🌱 Añadir opción vegetariana</button>
         </div>
         <div>
           <label class="campo-lbl" for="mPie">Nota a pie de página (opcional)</label>
@@ -1373,6 +1375,7 @@ async function abrirEditorMenu(id){
   }
 
   $("mAddApartado").onclick = () => { apartados.push({ titulo: "", platoIds: [], filtroSub: "todas" }); pintarApartados(); };
+  $("mAddVeggie").onclick = () => { apartados.push({ titulo: "Opción Vegetariana · Vegetarian Option", platoIds: [], filtroSub: "todas" }); pintarApartados(); };
   $("mCancelar").onclick = () => abrirListaMenus();
 
   $("mGuardar").onclick = async () => {
@@ -1457,7 +1460,8 @@ async function previsualizarMenu(id){
         </div>`;
       }).join("");
       if (!lineas) return "";
-      return `<h2 class="hh-seccion">${esc(a.titulo)}</h2>${lineas}`;
+      const esVeggie = /vegetarian|veggie|vegan|verdura|🌱/i.test(a.titulo);
+      return `<h2 class="hh-seccion${esVeggie ? " hh-veggie" : ""}">${esVeggie ? "🌱 " : ""}${esc(a.titulo)}</h2>${lineas}`;
     }).join("");
 
     const notaPartes = (m.notaCentral || "").split("·").map(s => s.trim()).filter(Boolean);
