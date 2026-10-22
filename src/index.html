@@ -175,12 +175,12 @@ body.previsualizando #capaImpresion{display:block;position:fixed;inset:0;backgro
 .hh-pie{margin-top:26px;border-top:1px solid #999;border-bottom:1px solid #999;padding:7px 4px;text-align:center;font-size:11px;color:#333;line-height:1.5;}
 /* ── Hoja trasera de ingredientes (doble cara) ── */
 .hoja-salto{page-break-before:always;break-before:page;}
-h2.hh-tras{font-family:'Inter',Arial,sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;
-  letter-spacing:.04em;color:#20291F;margin:28px 0 16px;text-decoration:underline;text-underline-offset:5px;text-align:left;}
+h2.hh-tras{font-family:'Inter',Arial,sans-serif;font-size:0.88em;font-weight:700;text-transform:uppercase;
+  letter-spacing:.04em;color:#20291F;margin:1.4em 0 0.7em;text-decoration:underline;text-underline-offset:5px;text-align:left;}
 h2.hh-tras::after{display:none;}
-.pt{margin:0 0 18px;}
-.pt-nombre{font-size:15.5px;font-weight:700;color:#20291F;}
-.pt-linea{font-size:12.5px;color:#333;font-style:italic;margin-top:1px;}
+.pt{margin:0 0 0.8em;}
+.pt-nombre{font-size:0.97em;font-weight:700;color:#20291F;}
+.pt-linea{font-size:0.78em;color:#333;font-style:italic;margin-top:1px;}
 .pt-linea b{font-style:normal;}
 /* ── Listado de platos (solo nombres) ── */
 .hoja-listado{font-family:'Inter',Arial,sans-serif;}
@@ -269,7 +269,7 @@ h2.hh-tras::after{display:none;}
   <div class="cabecera-int">
     <div>
       <div class="display" style="font-size:30px;font-weight:700;line-height:1.1;">Recetario de cocina</div>
-      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v53<span id="estadoNube"></span></div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">Platos, ingredientes, alérgenos y menús imprimibles · v54<span id="estadoNube"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btnMenus" class="btn-blanco">🖨 Menús imprimibles</button>
@@ -1623,37 +1623,45 @@ async function previsualizarMenu(id){
 /* Reduce proporcionalmente la hoja mostrada para que quepa en una página A4, y añade
    un control de tamaño en la barra. Funciona en todas las plantillas de menú. */
 function ajustarHojaAUnaPagina(){
-  const hoja = document.querySelector("#capaImpresion .hoja");
-  if (!hoja) return;
+  /* Ajusta CADA hoja (delantera, trasera…) por separado para que quepa en su página */
+  const hojas = [...document.querySelectorAll("#capaImpresion .hoja")];
+  if (hojas.length === 0) return;
   const ALTO_A4 = 1123; /* px aprox. de una A4 a 96dpi menos márgenes */
-  if (!hoja.style.fontSize) hoja.style.fontSize = "100%";
-  let escala = 100;
-  const aplicar = e => { hoja.style.fontSize = e + "%"; };
-  const autoajustar = () => {
-    escala = 100; aplicar(100);
+
+  const autoajustarUna = hoja => {
+    let escala = 100;
+    hoja.style.fontSize = "100%";
     let intentos = 0;
-    while (hoja.scrollHeight > ALTO_A4 && escala > 60 && intentos < 40){
-      escala -= 2; aplicar(escala); intentos++;
+    while (hoja.scrollHeight > ALTO_A4 && escala > 55 && intentos < 45){
+      escala -= 2; hoja.style.fontSize = escala + "%"; intentos++;
     }
-    const sel = document.getElementById("hojaEscala");
-    if (sel) sel.value = escala;
-    const et = document.getElementById("hojaEscalaVal");
-    if (et) et.textContent = escala + "%";
+    return escala;
   };
+  const autoajustarTodas = () => {
+    let menor = 100;
+    hojas.forEach(h => { menor = Math.min(menor, autoajustarUna(h)); });
+    /* el deslizador muestra la escala de la hoja que más se redujo */
+    const sel = document.getElementById("hojaEscala");
+    if (sel) sel.value = menor;
+    const et = document.getElementById("hojaEscalaVal");
+    if (et) et.textContent = menor + "%";
+  };
+
   const barra = document.querySelector("#capaImpresion .barra-impresion");
   if (barra && !document.getElementById("hojaEscala")){
     const caja = document.createElement("div");
     caja.style.cssText = "display:flex;align-items:center;gap:6px;margin-right:auto;background:#fff;border:1px solid var(--linea);border-radius:8px;padding:4px 10px;";
     caja.innerHTML = `<span style="font-size:12px;color:var(--suave);">Tamaño</span>
-      <input type="range" id="hojaEscala" min="60" max="120" step="1" value="100" style="width:90px;">
+      <input type="range" id="hojaEscala" min="55" max="120" step="1" value="100" style="width:90px;">
       <span id="hojaEscalaVal" style="font-size:12px;font-weight:600;min-width:34px;">100%</span>`;
     barra.insertBefore(caja, barra.firstChild);
     document.getElementById("hojaEscala").oninput = e => {
-      escala = Number(e.target.value); aplicar(escala);
-      document.getElementById("hojaEscalaVal").textContent = escala + "%";
+      const v = Number(e.target.value);
+      hojas.forEach(h => { h.style.fontSize = v + "%"; }); /* aplica a todas las hojas */
+      document.getElementById("hojaEscalaVal").textContent = v + "%";
     };
   }
-  setTimeout(autoajustar, 60);
+  setTimeout(autoajustarTodas, 60);
 }
 function cerrarPrevisualizacion(){
   document.body.classList.remove("previsualizando");
